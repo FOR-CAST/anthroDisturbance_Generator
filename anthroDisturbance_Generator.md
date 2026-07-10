@@ -19,7 +19,8 @@ Last updated: 2026-07-10
 
 #### Authors:
 
-Tati Micheletti <tati.micheletti@gmail.com> \[aut, cre\]
+Tati Micheletti <tati.micheletti@gmail.com> \[aut\], Alex M. Chubaty
+<achubaty@for-cast.ca> \[aut, cre\]
 
 ## Module Overview
 

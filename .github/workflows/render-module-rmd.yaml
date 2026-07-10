@@ -35,10 +35,15 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          ## PredictiveEcology dev packages break often -- pin exact SHAs to match
+          ## YT_caribou renv.lock (bump these in sync with the project lockfile).
           packages: |
             any::rmarkdown
             any::knitr
-            github::PredictiveEcology/SpaDES.core
+            github::PredictiveEcology/Require@0473223cdf73c1a8da6d8ec3a7e3b12b0cbb0da3
+            github::PredictiveEcology/quickPlot@b773db66d73e28e369a61090a2798fd544de082b
+            github::PredictiveEcology/reproducible@4248b74f72dd7acdd03ebf5486c2febe75bf6d22
+            github::PredictiveEcology/SpaDES.core@adc15591358cc9d69d58120173380d03f03d0662
 
       - name: Render manual
         run: rmarkdown::render("anthroDisturbance_Generator.Rmd", encoding = "UTF-8")

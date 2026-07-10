@@ -14,11 +14,12 @@ defineModule(sim, list(
                        "object and the disturbanceList containing current disturbances ",
                        "and potential disturbances (i.e., for disturbances of Generating type)."),
   keywords = "",
-  authors = structure(list(list(given = "Tati", 
-                                family = "Micheletti", role = c("aut", "cre"), 
-                                email = "tati.micheletti@gmail.com", 
-                                comment = NULL)), 
-                      class = "person"),
+  authors = c(
+    person(given = "Tati", family = "Micheletti", role = "aut",
+           email = "tati.micheletti@gmail.com"),
+    person(given = "Alex M.", family = "Chubaty", role = c("aut", "cre"),
+           email = "achubaty@for-cast.ca")
+  ),
   childModules = character(0),
   version = list(anthroDisturbance_Generator = "1.1.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
