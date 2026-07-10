@@ -24,15 +24,16 @@ generateDisturbancesShp <- function(disturbanceParameters,
                                     clusterDistance,
                                     distanceNewLinesFactor,
                                     runClusteringInParallel,
+                                    maxClusterCores,
                                     useClusterMethod,
                                     refinedStructure){
 
-  if (maskWaterAndMountainsFromLines)(Require("spaths"))
-  if (useRoadsPackage)(Require("geodata"))
-  
+  ## Optional-feature packages spaths (shortest-path routing) and geodata (DEM/landcover) are called
+  ## qualified below (spaths::/geodata::) and must be present in renv when those features are enabled;
+  ## no raw Require() -- the firewall (spades_safe_options) disables mid-run installs.
+
   # Extracting layers from previous ones
   # Total study area
-  rasterToMatchR <- raster::raster(rasterToMatch)
   probabilityDisturbance <- if (is.null(probabilityDisturbance)) list() else probabilityDisturbance
   studyAreaHash <- digest(studyArea)
   resolveSeismicLengthStats <- function(clusterVec,
@@ -115,7 +116,7 @@ generateDisturbancesShp <- function(disturbanceParameters,
     # fallback to crop if intersect fails or empties unexpectedly
     tryCatch(terra::crop(vec, area), error = function(...) vec)
   }
-  bindSpatVectors <- function(lhs, rhs, referenceRaster = rasterToMatchR) {
+  bindSpatVectors <- function(lhs, rhs, referenceRaster = rasterToMatch) {
     lhsValid <- inherits(lhs, "SpatVector") && tryCatch(nrow(lhs) > 0, error = function(...) FALSE)
     rhsValid <- inherits(rhs, "SpatVector") && tryCatch(nrow(rhs) > 0, error = function(...) FALSE)
     if (!lhsValid && !rhsValid) return(NULL)
@@ -127,7 +128,7 @@ generateDisturbancesShp <- function(disturbanceParameters,
       toPolygons <- function(vec) {
         geom <- tryCatch(unique(terra::geomtype(vec)), error = function(...) character(0))
         if (length(geom) && all(geom == "polygons")) return(vec)
-        width <- tryCatch(res(referenceRaster)[1], error = function(...) NA_real_)
+        width <- tryCatch(terra::res(referenceRaster)[1], error = function(...) NA_real_)
         if (!is.finite(width) || width <= 0) width <- 1
         buff <- terra::buffer(vec, width = width/2)
         terra::aggregate(buff, dissolve = TRUE)
@@ -608,7 +609,7 @@ generateDisturbancesShp <- function(disturbanceParameters,
             potLay[[potField]] <- potValsNum
             
             potLayF <- tryCatch(
-              terra::rasterize(potLay, terra::rast(rasterToMatchR), field = potField,
+              terra::rasterize(potLay, rasterToMatch, field = potField,
                                background = NA, touches = TRUE),
               error = function(e) {
                 message(paste("Forestry: rasterize failed ->", conditionMessage(e),
@@ -938,6 +939,7 @@ generateDisturbancesShp <- function(disturbanceParameters,
                 Lay                    = Lay,
                 potLayTopValid         = potLayTopValid,
                 runClusteringInParallel= runClusteringInParallel,
+                maxClusterCores        = maxClusterCores,
                 clusterDistance        = clusterDistance,
                 studyAreaHash          = studyAreaHash
               )

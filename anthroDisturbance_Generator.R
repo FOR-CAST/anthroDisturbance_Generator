@@ -25,11 +25,10 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.md", "anthroDisturbance_Generator.Rmd"), ## same file
-  reqdPkgs = list("SpaDES.core", "googledrive",
-                  "data.table", "reproducible", "geodata",
-                  "raster", "terra", "crayon", "msm", "sf",
-                  "fasterize", "tictoc", "roads", "truncnorm",
-                  "foreach", "doParallel", "digest", "ggplot2"),
+  reqdPkgs = list("crayon", "data.table", "digest", "doParallel", "foreach",
+                  "geodata", "ggplot2", "googledrive", "msm", "parallelly", "qs2",
+                  "reproducible", "roads", "sf", "SpaDES.core", "stringi", "terra",
+                  "tictoc", "tidyterra", "truncnorm", "viridisLite", "zip"),
   parameters = rbind(
     defineParameter(".plots", "character", "screen", NA, NA,
                     "Used by Plots function, which can be optionally used here"),
@@ -191,6 +190,10 @@ defineModule(sim, list(
     defineParameter("runClusteringInParallel", "logical", FALSE, NA, NA,
                     paste0("If TRUE, runs clusters' analysis in parallel (within the most internal ",
                            "for loop). This may be slower depending on amount of data")),
+    defineParameter("maxClusterCores", "numeric", NA, NA, NA,
+                    paste0("Max cores for the parallel line-clustering (when runClusteringInParallel ",
+                           "is TRUE). NA = parallelly::availableCores(constraints = 'connections'). Cap ",
+                           "this to prevent nesting under targets branching (reps x scenarios).")),
     defineParameter("refinedStructure", "logical", FALSE, NA, NA,
                     paste0("If TRUE, it tries to copy the structure of the line clusters ",
                            "for seismic lines (if useClusterMethod = TRUE). While this slows down ",
@@ -520,6 +523,7 @@ doEvent.anthroDisturbance_Generator = function(sim, eventTime, eventType) {
       sim <- scheduleEvent(sim, time(sim), "anthroDisturbance_Generator", "calculatingRate", eventPriority = 4)
       sim <- scheduleEvent(sim, time(sim), "anthroDisturbance_Generator", "generatingDisturbances", eventPriority = 4)
       sim <- scheduleEvent(sim, time(sim), "anthroDisturbance_Generator", "updatingDisturbanceList", eventPriority = 4)
+      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "anthroDisturbance_Generator", "plot", eventPriority = .last())
     },
     calculatingSize = {
 
@@ -585,10 +589,11 @@ doEvent.anthroDisturbance_Generator = function(sim, eventTime, eventType) {
               start(sim) == time(sim))){
         message(crayon::yellow(paste0("The parameter saveInitialDisturbances is TRUE.",
                                       " Saving initial disturbance layers")))
-        saveDisturbances(disturbanceList = sim$disturbanceList,
-                         currentTime = "IC", 
-                         overwrite = TRUE,
-                         runName = P(sim)$.runName)
+        .savedIC <- saveDisturbances(disturbanceList = sim$disturbanceList,
+                                     currentTime = "IC",
+                                     overwrite = TRUE,
+                                     runName = P(sim)$.runName)
+        sim <- SpaDES.core::registerOutputs(.savedIC, sim)
         
         initialBufferedAnthropogenicDisturbance500m <- createBufferedDisturbances(disturbanceList = sim$disturbanceList,
                                                                                   bufferSize = 500,
@@ -603,8 +608,6 @@ doEvent.anthroDisturbance_Generator = function(sim, eventTime, eventType) {
         lyr_count <- tryCatch({
           if (inherits(initialBufferedAnthropogenicDisturbance500m, "SpatRaster"))
             terra::nlyr(initialBufferedAnthropogenicDisturbance500m)
-          else if (inherits(initialBufferedAnthropogenicDisturbance500m, "Raster"))
-            raster::nlayers(initialBufferedAnthropogenicDisturbance500m)
           else NA_integer_
         }, error = function(...) NA_integer_)
         message(paste0("Writing buffered disturbance layer for ", time(sim),
@@ -656,7 +659,7 @@ doEvent.anthroDisturbance_Generator = function(sim, eventTime, eventType) {
                                                   pathInput = P(sim)$.inputFolderFireLayer, 
                                                   currentTime = time(sim),
                                                   returnNULL = TRUE,
-                                                  fun = raster::raster)
+                                                  fun = terra::rast)
             if (!is.null(mod$rstCurrentBurn))
               message(crayon::green("Fire layer found in inputs folder! Using it for the simulation."))
           } else {
@@ -714,6 +717,7 @@ doEvent.anthroDisturbance_Generator = function(sim, eventTime, eventType) {
                                                        distanceNewLinesFactor = P(sim)$distanceNewLinesFactor,
                                                        useClusterMethod = P(sim)$useClusterMethod,
                                                        runClusteringInParallel = P(sim)$runClusteringInParallel,
+                                                       maxClusterCores = P(sim)$maxClusterCores,
                                                        refinedStructure = P(sim)$refinedStructure)
         }
         sim$currentDisturbanceLayer[[paste0("Year", time(sim))]] <- mod$updatedLayers$currentDisturbanceLayer
@@ -775,13 +779,33 @@ doEvent.anthroDisturbance_Generator = function(sim, eventTime, eventType) {
         
         if (P(sim)$saveCurrentDisturbances) {
           message(paste0("Saving current disturbances for year ", time(sim)))
-          saveDisturbances(disturbanceList = sim$disturbanceList,
-                           currentTime = time(sim), overwrite = TRUE,
-                           runName = P(sim)$.runName)
+          .saved <- saveDisturbances(disturbanceList = sim$disturbanceList,
+                                     currentTime = time(sim), overwrite = TRUE,
+                                     runName = P(sim)$.runName)
+          sim <- SpaDES.core::registerOutputs(.saved, sim)
         }
       }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$runInterval, "anthroDisturbance_Generator", "updatingDisturbanceList")
       
+    },
+    plot = {
+      ## disturbance-map diagnostic: combine the current anthropogenic-disturbance layers into a
+      ## presence raster and plot it via tidyterra/ggplot2 through SpaDES.core::Plots() (so the PNG is
+      ## saved to figurePath() + registered as an output). Skips cleanly if nothing generated yet.
+      distRas <- disturbancePresenceRaster(sim$currentDisturbanceLayer, sim$rasterToMatch)
+      if (!is.null(distRas)) {
+        Plots(
+          data = distRas,
+          fn = plotDisturbanceRaster,
+          studyArea = sim$studyArea,
+          title = paste0("Anthropogenic disturbance -- ", time(sim)),
+          filename = paste0("currentDisturbance_", time(sim))
+        )
+      }
+      if (!is.na(P(sim)$.plotInterval)) {
+        sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval,
+                             "anthroDisturbance_Generator", "plot", eventPriority = .last())
+      }
     },
     warning(paste("Undefined event type: \'", current(sim)[1, "eventType", with = FALSE],
                   "\' in module \'", current(sim)[1, "moduleName", with = FALSE], "\'", sep = ""))

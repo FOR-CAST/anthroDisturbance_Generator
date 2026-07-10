@@ -1,7 +1,8 @@
-createCropLayFinalYear1 <- function(Lay, 
-                                    potLayTopValid, 
-                                    runClusteringInParallel, 
-                                    clusterDistance, 
+createCropLayFinalYear1 <- function(Lay,
+                                    potLayTopValid,
+                                    runClusteringInParallel,
+                                    maxClusterCores = NA,
+                                    clusterDistance,
                                     studyAreaHash) {
   # 0) input validation
   if (!is.numeric(clusterDistance) || length(clusterDistance) != 1) {
@@ -171,6 +172,7 @@ createCropLayFinalYear1 <- function(Lay,
           distThreshold  = clusterDistance,
           currPotential  = Pot,
           runInParallel  = runClusteringInParallel,
+          maxCores       = maxClusterCores,
           totPotential   = length(pots),
           userTags       = studyAreaHash)
   }))

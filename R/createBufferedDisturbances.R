@@ -5,14 +5,9 @@ createBufferedDisturbances <- function(disturbanceList,
                                        currentTime,
                                        convertToRaster){
   
-  # Keep both a SpatRaster view (for terra ops) and a RasterLayer (for fasterize)
-  targetSR <- terra::rast(rasterToMatch)                 ### FIX: canonical SpatRaster view
-  if (inherits(rasterToMatch, "SpatRaster")) {
-    rasterToMatchR <- raster::raster(rasterToMatch)      # for fasterize template
-  } else {
-    rasterToMatchR <- rasterToMatch                      # already RasterLayer
-  }
-  
+  ## canonical SpatRaster view (terra-first; no RasterLayer/fasterize template needed)
+  targetSR <- terra::rast(rasterToMatch)
+
   studyAreaTotalArea <- terra::expanse(studyArea, transform = FALSE, unit = "km")
   cell_km2 <- prod(terra::res(targetSR)) / 1e6           ### FIX: real cell area
   
@@ -53,9 +48,8 @@ createBufferedDisturbances <- function(disturbanceList,
     message(paste0("This represents ",
                    round(100 * (totalAreaKm2 / studyAreaTotalArea), 4), "% of total area."))
     
-    # Rasterize against the RasterLayer template (fasterize requirement)
-    bLaySF  <- sf::st_as_sf(bLay)
-    bLayRas <- fasterize::fasterize(sf = bLaySF, raster = rasterToMatchR)
+    ## rasterize the buffered polygons onto the template
+    bLayRas <- terra::rasterize(bLay, targetSR)
     names(bLayRas) <- INDEX
     
     # 1/0 semantics & area message
@@ -74,15 +68,9 @@ createBufferedDisturbances <- function(disturbanceList,
     
     # Nothing? return clean 0/1 mask with template geometry
     if (!length(allBuffered)){
-      if (inherits(rasterToMatch, "RasterLayer")) {
-        out <- rasterToMatch
-        out[!is.na(out[])] <- 0
-        return(out)
-      } else {
-        out <- targetSR
-        out[!is.na(out[])] <- 0
-        return(out)
-      }
+      out <- targetSR
+      out[!is.na(out[])] <- 0
+      return(out)
     }
     
     # Align every layer to targetSR (SpatRaster view) and force 0/1
@@ -116,13 +104,8 @@ createBufferedDisturbances <- function(disturbanceList,
                    round(totDistKm, 3), " km2 -- ", percDist,
                    "% of the total area (", round(totalKm2, 3), " km2)"))
     
-    # Class parity with template
-    if (inherits(rasterToMatch, "RasterLayer")) {
-      return(raster::raster(outSR))
-    } else {
-      return(outSR)
-    }
-    
+    return(outSR)
+
   } else {
     # (vector branch unchanged)
     if (any(vapply(allBuffered, is.null, FALSE))) {

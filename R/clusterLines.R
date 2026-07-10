@@ -8,10 +8,10 @@
 # respective SDs per cluster. 
 # Then I can just randomly choose which type of cluster the generated next will be and draw the grid based on the data.
  
-clusterLines <- function(Lines, distThreshold = 5000, 
+clusterLines <- function(Lines, distThreshold = 5000,
                          currPotential, totPotential,
                          plotClusterDiagnostic = FALSE,
-                         runInParallel){
+                         runInParallel, maxCores = NA){
   # If fewer than 2 lines, skip clustering and assign default cluster
   if (nrow(Lines) < 2) {
     if (nrow(Lines) == 0) return(Lines)
@@ -43,8 +43,13 @@ clusterLines <- function(Lines, distThreshold = 5000,
   totalLineClusters <- length(unique(Lines$cluster))
   
   if (runInParallel) {
-    n_cores <- parallel::detectCores()
-    cluster <- parallel::makeCluster(max(1, min(n_cores - 1, totalLineClusters)), type = "PSOCK")
+    ## NEVER parallel::detectCores(): parallelly::availableCores() respects Slurm/cgroup limits AND
+    ## caps at the socket-connection ceiling (R cannot open > ~125 connections, so detectCores() would
+    ## error on big nodes). omit = 1 reserves a core. maxCores (module param) caps further so this
+    ## cannot nest explosively under targets branching (reps x scenarios).
+    n_cores <- parallelly::availableCores(constraints = "connections", omit = 1)
+    if (!is.na(maxCores)) n_cores <- min(n_cores, as.integer(maxCores))
+    cluster <- parallelly::makeClusterPSOCK(max(1L, min(n_cores, totalLineClusters)))
     doParallel::registerDoParallel(cluster)
     on.exit(parallel::stopCluster(cluster), add = TRUE)
     

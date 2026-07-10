@@ -356,10 +356,16 @@ disturbanceInfoFromECCC <- function(studyArea,
                           proportionAreaSqKmChangedPerYear / ttDisturbanceRate]
       }
     }
-    write.csv(x = AD_changed, file.path(destinationPath, 
-                                        paste0("anthropogenicDisturbance_ECCC_", diffYears,"_", digest(studyArea),".csv")))
-    write.csv(x = proportionTable, file.path(destinationPath, 
-                                             paste0("proportionTable_ECCC_", diffYears,"_", digest(studyArea),".csv")))
+    ## return the written paths in `files` so the caller (calculateRate -> the calculatingRate event,
+    ## which has `sim`) can SpaDES.core::registerOutputs() them. TODO(registerOutputs): wire that last
+    ## mile in the event once it is confirmed these ECCC diagnostic CSVs are wanted as tracked outputs.
+    adFile <- file.path(destinationPath,
+                        paste0("anthropogenicDisturbance_ECCC_", diffYears, "_", digest(studyArea), ".csv"))
+    propFile <- file.path(destinationPath,
+                          paste0("proportionTable_ECCC_", diffYears, "_", digest(studyArea), ".csv"))
+    write.csv(x = AD_changed, adFile)
+    write.csv(x = proportionTable, propFile)
     return(list(AD_changed = AD_changed,
-                proportionTable = proportionTable))
+                proportionTable = proportionTable,
+                files = c(adFile, propFile)))
 }
