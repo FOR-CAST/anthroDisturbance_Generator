@@ -238,7 +238,7 @@ defineModule(sim, list(
                  desc = paste0("List (general category) of lists (specific ",
                                "class) needed for generating ",
                                "disturbances. This is generally the output from a potential",
-                               "Resources module (i.e., potentialResourcesNT_DataPrep), ",
+                               "Resources module (i.e., potentialResourcesYT_DataPrep), ",
                                "where multiple potential layers (i.e., mining",
                                " and oilGas) we replaced by only one layer with the highest",
                                "values being the ones that need to be filled ",
@@ -377,19 +377,19 @@ defineModule(sim, list(
                                "of BCR6 and NT1)"),
                  sourceURL = "https://drive.google.com/file/d/1wHIz_G088T66ygLK9i89NJGuwO3f6oIu/view?usp=sharing"),
     expectsInput(objectName = "studyArea", 
-                 objectClass = "SpatialPolygonDataFrame|spatVector", 
+                 objectClass = "SpatVector", 
                  desc = paste0("Study area to which the module should be ",
                                "constrained to. Defaults to NT1+BCR6. Object ",
                                "can be of class 'vect' from terra package"), 
                  sourceURL = "https://drive.google.com/file/d/1RPfDeHujm-rUHGjmVs6oYjLKOKDF0x09/view?usp=sharing"),
     expectsInput(objectName = "rasterToMatch", 
-                 objectClass = "RasterLayer|spatRaster", 
+                 objectClass = "SpatRaster", 
                  desc = paste0("All spatial outputs will be reprojected and ",
                                "resampled to it. Defaults to NT1+BCR6. Object ",
                                "can be of class 'rast' from terra package"), 
                  sourceURL = "https://drive.google.com/file/d/11yCDc2_Wia2iw_kz0f0jOXrLpL8of2oM/view?usp=sharing"),
     expectsInput(objectName = "rstCurrentBurn", 
-                 objectClass = "RasterLayer", 
+                 objectClass = "SpatRaster", 
                  desc = paste0("A binary raster with 1 values representing burned pixels. ",
                                "This raster is normally produced by either the module historicFires or ",
                                "a fire simulation module (i.e., fireSense, SCFM, LandMine)"),
@@ -407,12 +407,12 @@ defineModule(sim, list(
                                "disturbanceRate: representing a % of the study area to be newly disturbed per year"),
                  sourceURL = NA),
     expectsInput(objectName = "DEM", 
-                 objectClass = "spatRaster", 
+                 objectClass = "SpatRaster", 
                  desc = paste0("Elevation map of the study area. If not provided, it uses as default ",
                                "the DEM (`elavation_30()`) from the geodata R package."),
                  sourceURL = NA), 
     expectsInput(objectName = "featuresToAvoid", 
-                 objectClass = "spatRaster", 
+                 objectClass = "SpatRaster", 
                  desc = paste0("Raster map of the study area with areas to avoid (i.e., water, wetlands, mountain",
                                "tops) for linear feature building (excluding seismic lines). ",
                                "If not provided, it uses as default data from the geodata R package. ", 
@@ -420,7 +420,7 @@ defineModule(sim, list(
                  sourceURL = NA)
   ),
   outputObjects = bindrows(
-    createsOutput(objectName = "disturbanceList", objectClass = NA, 
+    createsOutput(objectName = "disturbanceList", objectClass = "list", 
                   desc = paste0("Updated list (general category) of lists (specific ",
                                 "class) of disturbances and the potential needed for ",
                                 "generating disturbances. ")),
@@ -857,7 +857,7 @@ doEvent.anthroDisturbance_Generator = function(sim, eventTime, eventType) {
     
     message(crayon::red(paste0("disturbanceList was not supplied. The current should only ",
                                " be used for module testing purposes ! Please run the module(s) ",
-                               "`anthroDisturbance_DataPrep` and `potentialResourcesNT_DataPrep`")))
+                               "`anthroDisturbance_DataPrep` and `potentialResourcesYT_DataPrep`")))
   }
   
   if (!suppliedElsewhere(object = "disturbanceParameters", sim = sim)) {

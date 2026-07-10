@@ -1,3 +1,8 @@
+## DEFERRED / currently non-functional: the install steps below rely on the
+## PredictiveEcology install actions + Require, which are broken. The module
+## manual (.md) is rendered LOCALLY and committed for now (github_document,
+## html_preview: false). Fix the install path (SpaDES.core + rmarkdown + knitr
+## are sufficient to render) and retarget the triggers to `main` to re-enable.
 on:
   pull_request:
     branches:
@@ -71,5 +76,5 @@ jobs:
         run: |
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
-          git commit anthroDisturbance_Generator.html -m 'Re-build anthroDisturbance_Generator.Rmd' || echo "No changes to commit"
+          git commit anthroDisturbance_Generator.md -m 'Re-build anthroDisturbance_Generator.Rmd [skip-ci]' || echo "No changes to commit"
           git push https://${{github.actor}}:${{secrets.GITHUB_TOKEN}}@github.com/${{github.repository}}.git HEAD:${{github.ref}} || echo "No changes to commit"
