@@ -15,15 +15,7 @@ editor_options:
 
 ```{r setup-anthroDisturbance_Generator, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, eval = FALSE, results = "hold") ## change to eval = TRUE if all chunks are to be evaluated
-
-dir.create("figures", showWarnings = FALSE)
-
-download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.png",
-              destfile = "figures/markdownBadge.png",
-              mode = "wb", quiet = TRUE)
 ```
-
-[![made-with-Markdown](figures/markdownBadge.png)](https://commonmark.org)
 
 #### Authors:
 

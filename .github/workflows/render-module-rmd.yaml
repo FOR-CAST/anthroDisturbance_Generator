@@ -1,80 +1,57 @@
-## DEFERRED / currently non-functional: the install steps below rely on the
-## PredictiveEcology install actions + Require, which are broken. The module
-## manual (.md) is rendered LOCALLY and committed for now (github_document,
-## html_preview: false). Fix the install path (SpaDES.core + rmarkdown + knitr
-## are sufficient to render) and retarget the triggers to `main` to re-enable.
+## Render this module's manual (anthroDisturbance_Generator.Rmd -> .md, github_document)
+## and commit the result. Rendering only needs SpaDES.core + rmarkdown + knitr (+ pandoc):
+## the manual's chunks parse the module metadata, they do NOT run the module, so the
+## module's reqdPkgs are not required. This avoids the old (broken) Require/full-SpaDES
+## install path. Runs on pushes to `main` that touch the manual or module source.
+name: Render module Rmd
+
 on:
-  pull_request:
-    branches:
-      - master
-      - development
   push:
     branches:
-      - master
-      - development
+      - main
     paths:
       - .github/workflows/render-module-rmd.yaml
       - anthroDisturbance_Generator.Rmd
       - anthroDisturbance_Generator.R
+  workflow_dispatch:
 
-name: Render module Rmd
+permissions:
+  contents: write
 
 jobs:
   render:
+    if: "!contains(github.event.head_commit.message, '[skip-ci]')"
     name: Render module Rmd
-    runs-on: ubuntu-20.04
-
-    env:
-      RSPM: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v6
 
-      - uses: r-lib/actions/setup-r@v1
+      - uses: r-lib/actions/setup-pandoc@v2
 
-      - uses: r-lib/actions/setup-pandoc@v1
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
 
-      - name: Install GDAL and other dependencies
-        run: |
-          sudo apt-get install -y \
-            libcurl4-openssl-dev \
-            libgdal-dev \
-            libgeos-dev \
-            libgit2-dev \
-            libglpk-dev \
-            libmagick++-dev \
-            libproj-dev \
-            libudunits2-dev \
-            libxml2-dev \
-            python3-gdal
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::rmarkdown
+            any::knitr
+            github::PredictiveEcology/SpaDES.core
 
-      - name: Install remotes, knitr, rmarkdown
-        run: |
-          install.packages("remotes")
-          remotes::install_cran("rmarkdown")
-          remotes::install_cran("knitr")
+      - name: Render manual
+        run: rmarkdown::render("anthroDisturbance_Generator.Rmd", encoding = "UTF-8")
         shell: Rscript {0}
 
-      - name: Install SpaDES
+      - name: Commit rendered manual
         run: |
-          install.packages("SpaDES", dependencies = TRUE)
-        shell: Rscript {0}
-
-      - name: Install module package dependencies
-        run: |
-          pkgs <- SpaDES.core::packages(modules = "anthroDisturbance_Generator", paths = "..")
-          Require::Require(pkgs)
-        shell: Rscript {0}
-
-      - name: Render module Rmd
-        run: |
-          rmarkdown::render("anthroDisturbance_Generator.Rmd", encoding = "UTF-8")
-        shell: Rscript {0}
-
-      - name: Commit results
-        run: |
-          git config user.email "actions@github.com"
-          git config user.name "GitHub Actions"
-          git commit anthroDisturbance_Generator.md -m 'Re-build anthroDisturbance_Generator.Rmd [skip-ci]' || echo "No changes to commit"
-          git push https://${{github.actor}}:${{secrets.GITHUB_TOKEN}}@github.com/${{github.repository}}.git HEAD:${{github.ref}} || echo "No changes to commit"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add anthroDisturbance_Generator.md
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Re-build anthroDisturbance_Generator.md [skip-ci]"
+            git push
+          fi

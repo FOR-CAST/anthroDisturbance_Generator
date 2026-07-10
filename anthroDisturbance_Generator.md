@@ -17,8 +17,6 @@ Last updated: 2026-07-10
 
 # anthroDisturbance_Generator Module
 
-[![made-with-Markdown](figures/markdownBadge.png)](https://commonmark.org)
-
 #### Authors:
 
 Tati Micheletti <tati.micheletti@gmail.com> \[aut, cre\]
