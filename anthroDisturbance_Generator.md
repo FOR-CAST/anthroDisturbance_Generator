@@ -1,6 +1,6 @@
 anthroDisturbance_Generator Manual
 ================
-Last updated: 2026-07-10
+Last updated: 2026-10-06
 
 - [anthroDisturbance_Generator
   Module](#anthrodisturbance_generator-module)
