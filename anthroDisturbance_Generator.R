@@ -228,10 +228,13 @@ defineModule(sim, list(
                       "EC_borealdisturbance_polygonal_2008_2010_FINAL_ALBERS.shp"), NA, NA,
                     "Vector of target filenames within the older archive to be extracted."),
     defineParameter("urlOLD", "character",
-                    paste0("https://www.ec.gc.ca/data_donnees/STB-DGST/003/",
+                    paste0("https://zenodo.org/records/23659898/files/",
                            "Boreal-ecosystem-anthropogenic-disturbance-vector-data-",
                            "2008-2010.zip"), NA, NA,
-                    "URL to download the older dataset archive.")
+                    paste0("URL to download the older dataset archive (Zenodo copy of the dataset of ",
+                           "Environment and Climate Change Canada, Open Government Licence - Canada; ",
+                           "original: https://open.canada.ca/data/en/dataset/",
+                           "afd0ce47-17c3-445c-b823-2f86409da2e0)."))
   ),
   inputObjects = bindrows(
     #expectsInput("objectName", "objectClass", "input object description", sourceURL, ...),
