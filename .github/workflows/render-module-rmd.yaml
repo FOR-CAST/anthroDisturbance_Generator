@@ -40,10 +40,10 @@ jobs:
           packages: |
             any::rmarkdown
             any::knitr
-            github::PredictiveEcology/Require@e41bb255c1e4e5b7514eca0c125e9c376d794375
+            github::PredictiveEcology/Require@572857885e5f84931e5f62f6237ffeb8100bfe91
             github::PredictiveEcology/quickPlot@a49fab61de547aaffd7f8fb5629571f88b4022f9
-            github::PredictiveEcology/reproducible@d1ea851eea939dabc0b59d2d121072938e2bd9f4
-            github::PredictiveEcology/SpaDES.core@fb83f189ca6edc8cb9dd335d1adc1fc70f66131e
+            github::PredictiveEcology/reproducible@039357e9e9cf2e8c8db2d73cfca7420ab34f5b91
+            github::PredictiveEcology/SpaDES.core@1a49e56b247f44d48e639a7834ca133beec587c1
 
       - name: Render manual
         run: rmarkdown::render("anthroDisturbance_Generator.Rmd", encoding = "UTF-8")
