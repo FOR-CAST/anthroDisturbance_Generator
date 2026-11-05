@@ -217,12 +217,12 @@ generateDisturbancesShp <- function(disturbanceParameters,
       whichOrigin <- dPar[ROW, disturbanceOrigin]
       updatedL <- lapply(whichOrigin, function(ORIGIN) {
         Lay <- disturbanceList[[Sector]][[ORIGIN]]
-        if (is.null(Lay)) {
+        if (is.null(Lay) || NROW(Lay) == 0) { # missing or empty (no features in the study area)
           message(
             paste0(
               "Layer of dataName = ", Sector,
               " and disturbanceOrigin = ", ORIGIN,
-              " is missing; skipping Enlarging for this class."
+              " is missing or empty; skipping Enlarging for this class."
             )
           )
           return(NULL)
@@ -703,7 +703,8 @@ generateDisturbancesShp <- function(disturbanceParameters,
           
           useBufferedArea <- isTRUE(disturbanceRateRelatesToBufferedArea) || identical(ORIGIN, "seismicLines")
           # Before I do the iterations I wanna know what is the currently disturbed area for this specific disturbance type
-          if (all(!is.null(Lay),
+          # (an empty existing layer, i.e. no feature of this type yet, has no area to buffer and aggregate)
+          if (all(!is.null(Lay), NROW(Lay) > 0,
                   useBufferedArea)){
             if (is(Lay, "RasterLayer"))
               Lay <- rast(Lay)
