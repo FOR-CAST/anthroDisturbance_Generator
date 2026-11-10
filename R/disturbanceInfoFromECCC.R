@@ -16,7 +16,7 @@ disturbanceInfoFromECCC <- function(studyArea,
                                                         "vector-data-2008-2010.zip"),
                                     targetFileOLD = c("EC_borealdisturbance_linear_2008_2010_FINAL_ALBERS.shp", 
                                                       "EC_borealdisturbance_polygonal_2008_2010_FINAL_ALBERS.shp"),
-                                    urlOLD = paste0("https://www.ec.gc.ca/data_donnees/STB-DGST/003/Boreal-ecosystem",
+                                    urlOLD = paste0("https://zenodo.org/records/23659898/files/Boreal-ecosystem",
                                                     "-anthropogenic-disturbance-vector-data-2008-2010.zip")){
   
   # If the table doesn't have disturbance rate, we can calculate it based on data!

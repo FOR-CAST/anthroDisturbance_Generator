@@ -21,7 +21,7 @@ defineModule(sim, list(
            email = "achubaty@for-cast.ca")
   ),
   childModules = character(0),
-  version = list(anthroDisturbance_Generator = "1.1.0"),
+  version = list(anthroDisturbance_Generator = "1.2.1"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
@@ -43,6 +43,10 @@ defineModule(sim, list(
                     "This describes the simulation time interval between save events."),
     defineParameter(".seed", "list", list(), NA, NA,
                     "Named list of seeds to use for each event (names)."),
+    defineParameter(".baseSeed", "numeric", NA, NA, NA,
+                    paste0("If not NA, the random number generator is re-seeded at the start of every event ",
+                           "with .baseSeed * 1000 + the current simulation year. This makes a run exactly ",
+                           "reproducible, independently of caching or of what was computed earlier.")),
     defineParameter(".useCache", "logical", FALSE, NA, NA,
                     "Should caching of events or module be used?"),
     defineParameter("runInterval", "numeric", 10, NA, NA,
@@ -228,10 +232,13 @@ defineModule(sim, list(
                       "EC_borealdisturbance_polygonal_2008_2010_FINAL_ALBERS.shp"), NA, NA,
                     "Vector of target filenames within the older archive to be extracted."),
     defineParameter("urlOLD", "character",
-                    paste0("https://www.ec.gc.ca/data_donnees/STB-DGST/003/",
+                    paste0("https://zenodo.org/records/23659898/files/",
                            "Boreal-ecosystem-anthropogenic-disturbance-vector-data-",
                            "2008-2010.zip"), NA, NA,
-                    "URL to download the older dataset archive.")
+                    paste0("URL to download the older dataset archive (Zenodo copy of the dataset of ",
+                           "Environment and Climate Change Canada, Open Government Licence - Canada; ",
+                           "original: https://open.canada.ca/data/en/dataset/",
+                           "afd0ce47-17c3-445c-b823-2f86409da2e0)."))
   ),
   inputObjects = bindrows(
     #expectsInput("objectName", "objectClass", "input object description", sourceURL, ...),
@@ -437,6 +444,8 @@ defineModule(sim, list(
 #   - type `init` is required for initialization
 
 doEvent.anthroDisturbance_Generator = function(sim, eventTime, eventType) {
+  # Reproducible randomness: seed from the base seed and the simulation year (see parameter .baseSeed)
+  if (!is.na(P(sim)$.baseSeed)) set.seed(as.integer(P(sim)$.baseSeed * 1000 + time(sim)))
   switch(
     eventType,
     init = {

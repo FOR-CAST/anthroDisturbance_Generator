@@ -3,6 +3,9 @@ saveDisturbances <- function(disturbanceList,
                              overwrite,
                              runName) {
   written <- character(0) ## collect files written, so the caller can registerOutputs() them
+  # Characters that are not allowed in Windows file names are replaced by "_"
+  safeFileName <- function(x) gsub("[<>:\"/\\\\|?*]", "_", x)
+  
   ## Helper to write one spatial object; returns the path written (character(0) if skipped).
   write_one <- function(obj, sector, layer = NULL) {
     # decide extension and write func
@@ -18,6 +21,7 @@ saveDisturbances <- function(disturbanceList,
       fname <- paste0("disturbances_", sector,
                       if (!is.null(layer)) paste0("_", layer) else "",
                       "_", currentTime, "_", runName, ".shp")
+      fname <- safeFileName(fname)
       out_path <- file.path(Paths$outputPath, fname)
       message(sprintf("Writing vector disturbance to %s", out_path))
       tryCatch(
@@ -33,6 +37,7 @@ saveDisturbances <- function(disturbanceList,
       fname <- paste0("disturbances_", sector,
                       if (!is.null(layer)) paste0("_", layer) else "",
                       "_", currentTime, "_", runName, ".tif")
+      fname <- safeFileName(fname)
       out_path <- file.path(Paths$outputPath, fname)
       if (length(out_path) != 1L) {
         lay_lbl <- if (is.null(layer)) "NA" else paste(layer, collapse = ";")
