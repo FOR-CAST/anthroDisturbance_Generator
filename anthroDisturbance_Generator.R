@@ -27,9 +27,9 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("README.md", "anthroDisturbance_Generator.Rmd"), ## same file
   reqdPkgs = list("crayon", "data.table", "digest", "doParallel", "foreach",
-                  "geodata", "ggplot2", "googledrive", "msm", "parallelly", "qs2",
-                  "reproducible", "roads", "sf", "SpaDES.core", "stringi", "terra",
-                  "tictoc", "tidyterra", "truncnorm", "viridisLite", "zip"),
+                  "geodata", "ggplot2", "googledrive", "msm", "parallelly",
+                  "reproducible", "roads", "sf", "SpaDES.core", "terra",
+                  "tictoc", "tidyterra", "truncnorm", "viridisLite"),
   parameters = rbind(
     defineParameter(".plots", "character", "screen", NA, NA,
                     "Used by Plots function, which can be optionally used here"),
