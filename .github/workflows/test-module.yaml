@@ -58,6 +58,14 @@ jobs:
             any::msm
             any::truncnorm
             any::dplyr
+            any::geodata
+            any::ggplot2
+            any::googledrive
+            any::roads
+            any::tidyterra
+            any::viridisLite
+            any::SpaDES.core
+            any::SpaDES.tools
             github::PredictiveEcology/reproducible@039357e9e9cf2e8c8db2d73cfca7420ab34f5b91
 
       - name: Run tests

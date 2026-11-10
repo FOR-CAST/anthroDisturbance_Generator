@@ -3,7 +3,7 @@
 ## unqualified calls come from (data.table, digest, foreach, reproducible, sf, terra, tictoc), plus
 ## sp, which test-saveDisturbances.R calls unqualified, and sets the `Paths` the helpers write to.
 ## Every test is skip_on_cran(), so NOT_CRAN is set here. Used by .github/workflows/test-module.yaml.
-## The module simulation tests need SpaDES.core and skip without it; upstream's tests.yml runs them.
+## The module simulation tests need SpaDES.core and the module's reqdPkgs; the workflow installs them.
 ## Tests use at most 2 cores, as CRAN asks; TEST_CORES raises that, to 4 at most, for a longer run.
 ## R starts OpenMP and BLAS before this script runs, so the limits must be in the environment R
 ## starts with: without them, the script runs itself again in a new R process that has them.
