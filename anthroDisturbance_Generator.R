@@ -252,7 +252,7 @@ defineModule(sim, list(
                                "values being the ones that need to be filled ",
                                "with new developments first, or prepared potential layers",
                                " (i.e., potentialCutblocks)."),
-                 sourceURL = "https://drive.google.com/file/d/1v7MpENdhspkWxHPZMlmx9UPCGFYGbbYm/view?usp=sharing"),
+                 sourceURL = "https://zenodo.org/records/20628704/files/disturbanceList.zip"),
     
     expectsInput(objectName = "disturbanceParameters", objectClass = "data.table",
                  desc = paste0("Table with the following columns: ",

@@ -45,6 +45,7 @@ unwrapTerraList <- function(terraList, generalPath){
     terraList <- prepInputs(url = terraList,
                archive = "disturbanceList.zip",
                targetFile = "theList.rds",
+               destinationPath = generalPath, # the layers are read from generalPath below
                fun = "readRDS")
     updatePath <- TRUE
   } else {
@@ -70,7 +71,9 @@ unwrapTerraList <- function(terraList, generalPath){
                                                    basename(terraList[[index1]][[index2]]))
       }
       obj2 <- readRDS(terraList[[index1]][[index2]])
-      return(terra::vect(obj2))
+      # With terra attached, readRDS() is terra's method, which already returns a SpatVector
+      if (!inherits(obj2, "SpatVector")) obj2 <- terra::vect(obj2)
+      return(obj2)
     })
     names(obj) <- names(terraList[[index1]])
     return(obj)
