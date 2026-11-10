@@ -66,6 +66,7 @@ jobs:
             any::viridisLite
             any::SpaDES.core
             any::SpaDES.tools
+            any::spaths
             github::PredictiveEcology/reproducible@039357e9e9cf2e8c8db2d73cfca7420ab34f5b91
 
       - name: Run tests
