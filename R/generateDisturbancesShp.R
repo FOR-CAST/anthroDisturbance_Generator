@@ -24,9 +24,9 @@ generateDisturbancesShp <- function(disturbanceParameters,
                                     clusterDistance,
                                     distanceNewLinesFactor,
                                     runClusteringInParallel,
-                                    maxClusterCores,
                                     useClusterMethod,
-                                    refinedStructure){
+                                    refinedStructure,
+                                    maxClusterCores = NA){
 
   ## Optional-feature packages spaths (shortest-path routing) and geodata (DEM/landcover) are called
   ## qualified below (spaths::/geodata::) and must be present in renv when those features are enabled;

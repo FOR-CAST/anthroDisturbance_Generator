@@ -7,9 +7,9 @@ cropLinesToPotential <- function(Lay, potLayTopValid) {
 createCropLayFinalYear1 <- function(Lay,
                                     potLayTopValid,
                                     runClusteringInParallel,
-                                    maxClusterCores = NA,
                                     clusterDistance,
-                                    studyAreaHash) {
+                                    studyAreaHash,
+                                    maxClusterCores = NA) {
   # 0) input validation
   if (!is.numeric(clusterDistance) || length(clusterDistance) != 1) {
     stop("`clusterDistance` must be a single numeric value")
