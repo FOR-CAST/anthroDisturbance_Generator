@@ -179,15 +179,15 @@ test_that("Raster mode (SpatRaster template): 1/0/NA semantics and class parity"
   expect_true(any(values(out) == 1, na.rm = TRUE)) # some disturbance exists
 })
 
-test_that("Raster mode (RasterLayer template): class tracks template class", {
-  skip_if_not_installed("fasterize")
-  
+test_that("Raster mode (RasterLayer template): accepted, and the result is a SpatRaster", {
+  skip_if_not_installed("raster") ## only to build the RasterLayer template
+
   r <- make_template(n = 80, res_m = 10)
   sa <- make_study_area(r)
   dl <- make_disturbance_list(r)
-  
+
   r_template <- raster::raster(r) # RasterLayer template
-  
+
   out <- createBufferedDisturbances(
     disturbanceList = dl,
     bufferSize = 25,
@@ -196,10 +196,20 @@ test_that("Raster mode (RasterLayer template): class tracks template class", {
     currentTime = 1L,
     convertToRaster = TRUE
   )
-  
-  expect_true(inherits(out, "RasterLayer"))  # class parity with template
-  # still 1/0/NA
-  vals <- raster::unique(out)
+
+  expect_s4_class(out, "SpatRaster")
+  ## the same cells as with the SpatRaster template
+  outSR <- createBufferedDisturbances(
+    disturbanceList = dl,
+    bufferSize = 25,
+    rasterToMatch = r,
+    studyArea = sa,
+    currentTime = 1L,
+    convertToRaster = TRUE
+  )
+  expect_identical(terra::values(out, mat = FALSE), terra::values(outSR, mat = FALSE))
+  ## still 1/0/NA
+  vals <- unique(terra::values(out, mat = FALSE))
   vals <- vals[!is.na(vals)]
   expect_true(all(vals %in% c(0, 1)))
 })
