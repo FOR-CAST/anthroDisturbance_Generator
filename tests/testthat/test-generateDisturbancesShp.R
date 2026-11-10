@@ -832,6 +832,7 @@ test_that("Mines generate from potentialMining and connect to a pre-existing roa
 
 # 21
 test_that("Connecting avoids raster obstacles (no blocking)", {
+  skip_if_not_installed("spaths") # featuresToAvoid routing uses spaths::shortest_paths()
   r  <- rast(ncol=100, nrow=100, xmin=0, xmax=100, ymin=0, ymax=100, vals=1); crs(r) <- "EPSG:32633"
   sa <- as.polygons(ext(r)); crs(sa) <- crs(r)
   
