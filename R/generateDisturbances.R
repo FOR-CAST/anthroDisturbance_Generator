@@ -749,8 +749,9 @@ generateDisturbances <- function(disturbanceParameters,
       } else if (isTRUE(getOption("run_scenario.debug", FALSE))) {
         message("[generateDisturbances] allLaysRas is NULL; skipping mask of existing disturbances")
       }
+      ## mat = FALSE: a matrix of values would name the column "vals.<layer name>"
       potentialDT <- na.omit(data.table(pixelID = 1:ncell(potLayF),
-                                vals = terra::values(potLayF)))
+                                vals = terra::values(potLayF, mat = FALSE)))
       # Third, subset the best pixels
       potentialDT <- potentialDT[is.finite(vals)]
       if (!nrow(potentialDT)) {
