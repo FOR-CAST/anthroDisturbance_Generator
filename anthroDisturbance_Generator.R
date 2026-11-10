@@ -603,7 +603,7 @@ doEvent.anthroDisturbance_Generator = function(sim, eventTime, eventType) {
                                      currentTime = "IC",
                                      overwrite = TRUE,
                                      runName = P(sim)$.runName)
-        sim <- SpaDES.core::registerOutputs(.savedIC, sim)
+        if (length(.savedIC)) sim <- SpaDES.core::registerOutputs(.savedIC, sim)
         
         initialBufferedAnthropogenicDisturbance500m <- createBufferedDisturbances(disturbanceList = sim$disturbanceList,
                                                                                   bufferSize = 500,
@@ -792,7 +792,7 @@ doEvent.anthroDisturbance_Generator = function(sim, eventTime, eventType) {
           .saved <- saveDisturbances(disturbanceList = sim$disturbanceList,
                                      currentTime = time(sim), overwrite = TRUE,
                                      runName = P(sim)$.runName)
-          sim <- SpaDES.core::registerOutputs(.saved, sim)
+          if (length(.saved)) sim <- SpaDES.core::registerOutputs(.saved, sim)
         }
       }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$runInterval, "anthroDisturbance_Generator", "updatingDisturbanceList")
