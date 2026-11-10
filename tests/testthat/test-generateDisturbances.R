@@ -81,7 +81,7 @@ sum_ones <- function(ras) sum(values(ras) == 1, na.rm = TRUE)
 
 # Ensure optional dependencies available for scenarios that call the full generator
 skip_if_missing_generate_deps <- function() {
-  req_pkgs <- c("SpaDES.tools", "raster", "tictoc", "reproducible")
+  req_pkgs <- c("SpaDES.tools", "tictoc", "reproducible")
   for (pkg in req_pkgs) testthat::skip_if_not_installed(pkg)
 }
 # ---------- disturbanceParameters helpers (only polygon “Generating”) ----------

@@ -302,7 +302,7 @@ test_that("Multiple resolutionVector values generate an error", {
 })
 
 test_that("generateDisturbancesShp uses testing AOI forestry data", {
-  req_pkgs <- c("terra", "sf", "data.table", "fasterize", "digest")
+  req_pkgs <- c("terra", "sf", "data.table", "digest")
   for (pkg in req_pkgs) skip_if_not_installed(pkg)
   
   fixtures <- load_testing_aoi_fixtures(resolution = 60)

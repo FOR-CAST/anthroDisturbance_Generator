@@ -27,8 +27,8 @@ defineModule(sim, list(
   documentation = list("README.md", "anthroDisturbance_Generator.Rmd"), ## same file
   reqdPkgs = list("SpaDES.core", "googledrive",
                   "data.table", "reproducible", "geodata",
-                  "raster", "terra", "crayon", "msm", "sf",
-                  "fasterize", "tictoc", "roads", "truncnorm",
+                  "terra", "crayon", "msm", "sf",
+                  "tictoc", "roads", "truncnorm",
                   "foreach", "doParallel", "digest", "ggplot2"),
   parameters = rbind(
     defineParameter(".plots", "character", "screen", NA, NA,
@@ -612,8 +612,6 @@ doEvent.anthroDisturbance_Generator = function(sim, eventTime, eventType) {
         lyr_count <- tryCatch({
           if (inherits(initialBufferedAnthropogenicDisturbance500m, "SpatRaster"))
             terra::nlyr(initialBufferedAnthropogenicDisturbance500m)
-          else if (inherits(initialBufferedAnthropogenicDisturbance500m, "Raster"))
-            raster::nlayers(initialBufferedAnthropogenicDisturbance500m)
           else NA_integer_
         }, error = function(...) NA_integer_)
         message(paste0("Writing buffered disturbance layer for ", time(sim),
@@ -665,7 +663,7 @@ doEvent.anthroDisturbance_Generator = function(sim, eventTime, eventType) {
                                                   pathInput = P(sim)$.inputFolderFireLayer, 
                                                   currentTime = time(sim),
                                                   returnNULL = TRUE,
-                                                  fun = raster::raster)
+                                                  fun = terra::rast)
             if (!is.null(mod$rstCurrentBurn))
               message(crayon::green("Fire layer found in inputs folder! Using it for the simulation."))
           } else {
