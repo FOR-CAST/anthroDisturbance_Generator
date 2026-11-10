@@ -9,6 +9,14 @@ circleNeighbours <- function(rasterToMatch, cells, nPix) {
   # must the focal cell in the centre.
   nb[nb > 0] <- 1
   nb[ceiling(nrow(nb)/2), ceiling(ncol(nb)/2)] <- 0
-  data.table::as.data.table(terra::adjacent(x = rasterToMatch, cells = cells, directions = nb,
-                                            pairs = TRUE, include = FALSE))
+  adj <- terra::adjacent(x = rasterToMatch, cells = cells, directions = nb, pairs = TRUE,
+                         include = FALSE)
+  # Keep the order raster::adjacent() used -- focal cell by focal cell, then column by column of
+  # the matrix -- because generateDisturbances() samples rows of this table: with the same seed,
+  # it then picks the same cells as before. (terra lists the cells by cell number instead.)
+  rcFrom <- terra::rowColFromCell(rasterToMatch, adj[, "from"])
+  rcTo <- terra::rowColFromCell(rasterToMatch, adj[, "to"])
+  posInMatrix <- (rcTo[, 2] - rcFrom[, 2]) * nrow(nb) + (rcTo[, 1] - rcFrom[, 1])
+  adj <- adj[order(match(adj[, "from"], cells), posInMatrix), , drop = FALSE]
+  data.table::as.data.table(adj)
 }
