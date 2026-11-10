@@ -204,6 +204,28 @@ test_that("Raster mode (RasterLayer template): class tracks template class", {
   expect_true(all(vals %in% c(0, 1)))
 })
 
+test_that("Raster mode: a cell is 1 exactly when its centre is inside a buffered disturbance", {
+  r <- make_template(n = 80, res_m = 10)
+  sa <- make_study_area(r)
+  dl <- make_disturbance_list(r)
+
+  ras <- createBufferedDisturbances(dl, bufferSize = 25, rasterToMatch = r, studyArea = sa,
+                                    currentTime = 1L, convertToRaster = TRUE)
+  vec <- createBufferedDisturbances(dl, bufferSize = 25, rasterToMatch = r, studyArea = sa,
+                                    currentTime = 1L, convertToRaster = FALSE)
+  ## expected from the geometry alone: cell centres strictly inside the buffered polygons are 1, and
+  ## a 1 is never outside them (centres exactly on an edge may go either way)
+  centres <- vect(xyFromCell(r, seq_len(ncell(r))), crs = crs(r))
+  strictlyInside <- which(is.related(centres, vec, "within"))
+  touching <- which(is.related(centres, vec, "intersects"))
+  ones <- which(values(ras, mat = FALSE) == 1)
+  expect_gt(length(strictlyInside), 0)
+  expect_true(all(strictlyInside %in% ones))
+  expect_true(all(ones %in% touching))
+  ## every other cell of the study area is 0
+  expect_true(all(values(ras, mat = FALSE)[-ones] == 0, na.rm = TRUE))
+})
+
 test_that("Raster mode: potential layers do not change the result", {
   skip_if_not_installed("fasterize")
   

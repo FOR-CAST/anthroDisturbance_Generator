@@ -84,7 +84,8 @@ createBufferedDisturbances <- function(disturbanceList,
     
     # Align every layer to targetSR (SpatRaster view) and force 0/1
     allBuffered <- lapply(allBuffered, function(r) {
-      r <- terra::rast(r)  # RasterLayer -> SpatRaster
+      ## terra::rast() of a SpatRaster would return an empty template, without the values
+      if (!inherits(r, "SpatRaster")) r <- terra::rast(r)  # RasterLayer -> SpatRaster
       if (!terra::compareGeom(r, targetSR, stopOnError = FALSE)) {
         r <- terra::project(r, targetSR)
         r <- terra::resample(r, targetSR, method = "near")
