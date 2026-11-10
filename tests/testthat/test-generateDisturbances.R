@@ -298,7 +298,7 @@ testthat::test_that("Forestry Generating avoids burned cells", {
       v <- terra::vect(matrix(c(x0,y0, x0+size,y0, x0+size,y0+size, x0,y0+size, x0,y0),
                               ncol = 2, byrow = TRUE),
                        type = "polygons",
-                       crs  = terra::crs(pot))
+                       crs  = terra::crs(r))
       v$Potential <- pot
       v$Class <- "potentialCutblocks"
       v$ORIGIN <- 1900L
