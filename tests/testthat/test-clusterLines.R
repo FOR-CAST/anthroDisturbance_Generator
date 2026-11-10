@@ -138,6 +138,7 @@ worker_recorder <- function(rec) {
 
 test_that("Parallel clustering uses no more workers than the cores R may use", {
   skip_if_not_installed("doParallel")
+  skip_if_not_installed("parallelly")
   withr::local_options(mc.cores = 1) # R may use 2 cores: one for itself, one for a worker
   withr::defer(foreach::registerDoSEQ())
   rec <- new.env()
@@ -151,6 +152,7 @@ test_that("Parallel clustering uses no more workers than the cores R may use", {
 
 test_that("maxCores caps the parallel workers and the result matches sequential", {
   skip_if_not_installed("doParallel")
+  skip_if_not_installed("parallelly")
   withr::defer(foreach::registerDoSEQ())
   res_seq <- clusterLines(four_lines, distThreshold = 1,
                           currPotential = 1, totPotential = 1,
@@ -167,6 +169,7 @@ test_that("maxCores caps the parallel workers and the result matches sequential"
 })
 
 test_that("clusterWorkers() never exceeds the line clusters, maxCores or the cores available", {
+  skip_if_not_installed("parallelly")
   # availableCores(omit = 1) reports 3 cores for workers
   mockery::stub(clusterWorkers, "parallelly::availableCores", 3L)
   expect_identical(clusterWorkers(nClusters = 100, maxCores = NA), 3L)
