@@ -21,7 +21,9 @@ make_toy_distlist_zip <- function(dir) {
 testthat::test_that("unwrapTerraList() reads an extracted list when terra is attached", {
   testthat::skip_on_cran()
   testthat::skip_if(Sys.which("zip") == "", "no zip program")
-  withr::local_package("terra") # a SpaDES module attaches its reqdPkgs
+  # A SpaDES module attaches its reqdPkgs. Attach terra only if it is not attached yet, so the
+  # test leaves the search path as it found it (local_package() detaches on exit)
+  if (!"package:terra" %in% search()) withr::local_package("terra")
   gp <- withr::local_tempdir()
   make_toy_distlist_zip(gp)
   # theList.rds and the layers are already in generalPath (e.g., a second run)
@@ -34,7 +36,10 @@ testthat::test_that("unwrapTerraList() reads an extracted list when terra is att
 testthat::test_that("unwrapTerraList() extracts the archive into generalPath, where it reads the layers", {
   testthat::skip_on_cran()
   testthat::skip_if(Sys.which("zip") == "", "no zip program")
-  withr::local_package("terra")
+  testthat::skip_if_not_installed("reproducible")
+  if (!"package:terra" %in% search()) withr::local_package("terra")
+  # unwrapTerraList() calls prepInputs(), which a module finds attached with its reqdPkgs
+  if (!"package:reproducible" %in% search()) withr::local_package("reproducible")
   withr::local_options(reproducible.destinationPath = NULL)
   gp <- withr::local_tempdir()
   files <- make_toy_distlist_zip(gp)
