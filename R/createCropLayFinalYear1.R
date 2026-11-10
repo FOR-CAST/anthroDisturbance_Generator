@@ -1,9 +1,15 @@
+# Project (if needed) and clip lines to the potential area, keeping one feature per line
+cropLinesToPotential <- function(Lay, potLayTopValid) {
+  if (!terra::same.crs(Lay, potLayTopValid)) Lay <- terra::project(Lay, terra::crs(potLayTopValid))
+  terra::crop(Lay, potLayTopValid)
+}
+
 createCropLayFinalYear1 <- function(Lay,
                                     potLayTopValid,
                                     runClusteringInParallel,
-                                    maxClusterCores = NA,
                                     clusterDistance,
-                                    studyAreaHash) {
+                                    studyAreaHash,
+                                    maxClusterCores = NA) {
   # 0) input validation
   if (!is.numeric(clusterDistance) || length(clusterDistance) != 1) {
     stop("`clusterDistance` must be a single numeric value")
@@ -13,7 +19,9 @@ createCropLayFinalYear1 <- function(Lay,
   }
   
   # 1) crop/reproject Lay to potLayTopValid
-  cropLay <- Cache(postProcessTo, Lay, potLayTopValid)
+  # (terra::crop keeps every line as its own feature, clipped to the potential area. On very small
+  #  inputs, reproducible::postProcessTo can merge or drop lines; on real data both give the same result.)
+  cropLay <- Cache(cropLinesToPotential, Lay, potLayTopValid)
   
   # If nothing inside the mask, return consistent list (old callers now expect list)
   if (nrow(cropLay) == 0L) {

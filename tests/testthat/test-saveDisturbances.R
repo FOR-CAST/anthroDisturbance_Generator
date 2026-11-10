@@ -25,6 +25,7 @@ test_that("single SpatVector sector is saved as shapefile", {
 })
 
 test_that("single RasterLayer sector is saved as tiff", {
+  skip_if_not_installed("raster")
   r <- raster::raster(nrows = 5, ncols = 5)
   raster::values(r) <- 1
   disturbances <- list(sectorB = r)
@@ -232,8 +233,7 @@ test_that("unusual names with spaces and punctuation are saved", {
                      runName = run_name),
     "Layer: sec tor! was likely not generated"
   )
-  # file name will include the raw sector and runName
-  pattern <- paste0("disturbances_sec tor!_T8_", run_name)
-  files <- list.files(output_dir, pattern = pattern, full.names = TRUE)
-  expect_true(length(files) >= 1)
+  # characters not allowed in file names (e.g., ":" and "*") are replaced by "_"
+  files <- list.files(output_dir)
+  expect_true(any(grepl("disturbances_sec tor!_T8_run_Special_", files, fixed = TRUE)))
 })

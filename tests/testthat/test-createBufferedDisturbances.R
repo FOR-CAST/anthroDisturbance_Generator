@@ -92,7 +92,6 @@ area_m2 <- function(v) {
 # --- tests -----------------------------------------------------------------
 
 test_that("Vector mode: returns dissolved SpatVector and excludes potential layers", {
-  skip_if_not_installed("fasterize") # used inside the function even in vector workflow
   r <- make_template(n = 100, res_m = 10)
   sa <- make_study_area(r)
   
@@ -132,8 +131,6 @@ test_that("Vector mode: returns dissolved SpatVector and excludes potential laye
 })
 
 test_that("Vector mode: empty raster inputs are ignored (NULL dropped) and union still works", {
-  skip_if_not_installed("fasterize")
-  
   r <- make_template(n = 60, res_m = 10)
   sa <- make_study_area(r)
   dl <- make_disturbance_list(r)
@@ -156,8 +153,6 @@ test_that("Vector mode: empty raster inputs are ignored (NULL dropped) and union
 })
 
 test_that("Raster mode (SpatRaster template): 1/0/NA semantics and class parity", {
-  skip_if_not_installed("fasterize")
-  
   r <- make_template(n = 80, res_m = 10)
   sa <- make_study_area(r)
   dl <- make_disturbance_list(r)
@@ -179,15 +174,15 @@ test_that("Raster mode (SpatRaster template): 1/0/NA semantics and class parity"
   expect_true(any(values(out) == 1, na.rm = TRUE)) # some disturbance exists
 })
 
-test_that("Raster mode (RasterLayer template): class tracks template class", {
-  skip_if_not_installed("fasterize")
-  
+test_that("Raster mode (RasterLayer template): accepted, and the result is a SpatRaster", {
+  skip_if_not_installed("raster") ## only to build the RasterLayer template
+
   r <- make_template(n = 80, res_m = 10)
   sa <- make_study_area(r)
   dl <- make_disturbance_list(r)
-  
+
   r_template <- raster::raster(r) # RasterLayer template
-  
+
   out <- createBufferedDisturbances(
     disturbanceList = dl,
     bufferSize = 25,
@@ -196,17 +191,47 @@ test_that("Raster mode (RasterLayer template): class tracks template class", {
     currentTime = 1L,
     convertToRaster = TRUE
   )
-  
-  expect_true(inherits(out, "RasterLayer"))  # class parity with template
-  # still 1/0/NA
-  vals <- raster::unique(out)
+
+  expect_s4_class(out, "SpatRaster")
+  ## the same cells as with the SpatRaster template
+  outSR <- createBufferedDisturbances(
+    disturbanceList = dl,
+    bufferSize = 25,
+    rasterToMatch = r,
+    studyArea = sa,
+    currentTime = 1L,
+    convertToRaster = TRUE
+  )
+  expect_identical(terra::values(out, mat = FALSE), terra::values(outSR, mat = FALSE))
+  ## still 1/0/NA
+  vals <- unique(terra::values(out, mat = FALSE))
   vals <- vals[!is.na(vals)]
   expect_true(all(vals %in% c(0, 1)))
 })
 
+test_that("Raster mode: a cell is 1 exactly when its centre is inside a buffered disturbance", {
+  r <- make_template(n = 80, res_m = 10)
+  sa <- make_study_area(r)
+  dl <- make_disturbance_list(r)
+
+  ras <- createBufferedDisturbances(dl, bufferSize = 25, rasterToMatch = r, studyArea = sa,
+                                    currentTime = 1L, convertToRaster = TRUE)
+  vec <- createBufferedDisturbances(dl, bufferSize = 25, rasterToMatch = r, studyArea = sa,
+                                    currentTime = 1L, convertToRaster = FALSE)
+  ## expected from the geometry alone: cell centres strictly inside the buffered polygons are 1, and
+  ## a 1 is never outside them (centres exactly on an edge may go either way)
+  centres <- vect(xyFromCell(r, seq_len(ncell(r))), crs = crs(r))
+  strictlyInside <- which(is.related(centres, vec, "within"))
+  touching <- which(is.related(centres, vec, "intersects"))
+  ones <- which(values(ras, mat = FALSE) == 1)
+  expect_gt(length(strictlyInside), 0)
+  expect_true(all(strictlyInside %in% ones))
+  expect_true(all(ones %in% touching))
+  ## every other cell of the study area is 0
+  expect_true(all(values(ras, mat = FALSE)[-ones] == 0, na.rm = TRUE))
+})
+
 test_that("Raster mode: potential layers do not change the result", {
-  skip_if_not_installed("fasterize")
-  
   r <- make_template(n = 60, res_m = 10)
   sa <- make_study_area(r)
   
@@ -240,8 +265,6 @@ test_that("Raster mode: potential layers do not change the result", {
 })
 
 test_that("Inputs: raster disturbance layers must be 1-coded to be kept", {
-  skip_if_not_installed("fasterize")
-  
   r <- make_template(n = 40, res_m = 10)
   sa <- make_study_area(r)
   

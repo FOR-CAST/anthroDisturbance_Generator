@@ -24,9 +24,9 @@ generateDisturbancesShp <- function(disturbanceParameters,
                                     clusterDistance,
                                     distanceNewLinesFactor,
                                     runClusteringInParallel,
-                                    maxClusterCores,
                                     useClusterMethod,
-                                    refinedStructure){
+                                    refinedStructure,
+                                    maxClusterCores = NA){
 
   ## Optional-feature packages spaths (shortest-path routing) and geodata (DEM/landcover) are called
   ## qualified below (spaths::/geodata::) and must be present in renv when those features are enabled;
@@ -1822,10 +1822,11 @@ generateDisturbancesShp <- function(disturbanceParameters,
         targetHash <- paste0(unlist(targetHash), collapse = "_")
         if (isTRUE(useRoadsPackage) || (isTRUE(maskWaterAndMountainsFromLines) && is.null(featuresToAvoid))) {
           DEMraw <- geodata::elevation_30s(country = "CAN", path = Paths[["inputPath"]])
-          DEM <- postProcessTo(from = DEMraw, to = rasterToMatch, cropTo = studyArea, 
-                               projectTo = rasterToMatch, maskTo = studyArea, 
-                               writeTo = file.path(Paths[["inputPath"]], 
-                                                   paste0("DEM_", targetHash, ".tif")))
+          fileNamePostPro <- file.path(Paths[["inputPath"]], 
+                                       paste0("DEM_", targetHash, ".tif"))
+            DEM <- postProcessTo(from = DEMraw, to = rasterToMatch, cropTo = studyArea, 
+                                 projectTo = rasterToMatch, maskTo = studyArea)#, 
+                                 # writeTo = fileNamePostPro) # Was creating error. Why?! Related to Rcpp
         }
         if (useRoadsPackage){
           # Need to create `connected`

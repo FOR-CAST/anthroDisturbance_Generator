@@ -245,7 +245,7 @@ generateDisturbances <- function(disturbanceParameters,
           }
         }
         if (nrow(polySF) > 0L) {
-          polySF$Polys <- 1
+          polySF$Polys <- rep(1, nrow(polySF)) # rep(): a scalar cannot be assigned to a 0-row sf
           polysField <- "Polys"
           message("Rasterizing disturbances...")
           rasterToMatch <- rasterToMatch
@@ -483,7 +483,7 @@ generateDisturbances <- function(disturbanceParameters,
         # If NA, it doesn't matter, but need to create a 
         # field so not the whole thing becomes one big 1 map
         
-        potLaySF$Potential <- 1
+        potLaySF$Potential <- rep(1, nrow(potLaySF))
         potField <- "Potential"
         message(crayon::yellow(paste0("Potential field not declared for ", ORIGIN, " (",
                                       Sector, "). Considering all polygons as likely to develop ",
@@ -749,8 +749,9 @@ generateDisturbances <- function(disturbanceParameters,
       } else if (isTRUE(getOption("run_scenario.debug", FALSE))) {
         message("[generateDisturbances] allLaysRas is NULL; skipping mask of existing disturbances")
       }
+      ## mat = FALSE: a matrix of values would name the column "vals.<layer name>"
       potentialDT <- na.omit(data.table(pixelID = 1:ncell(potLayF),
-                                vals = terra::values(potLayF)))
+                                vals = terra::values(potLayF, mat = FALSE)))
       # Third, subset the best pixels
       potentialDT <- potentialDT[is.finite(vals)]
       if (!nrow(potentialDT)) {
@@ -822,29 +823,11 @@ generateDisturbances <- function(disturbanceParameters,
         # The distance depends on how many pixels I need
         whichAdj <- unique(howManyAdj)
         print("Doing focal weight...")
-        nbMatrices <- lapply(whichAdj, function(X){
-          m <- terra::focalMat(x = rasterToMatch, d = X * terra::res(rasterToMatch)[1],
-                      type = "circle")
-          m[m > 0] <- 1
-          return(m)
-        })
-        names(nbMatrices) <- paste0("NB_", whichAdj)
         allPixAdj <- sapply(whichAdj, function(totAdj){
           pix <- pixNeedAdj[which(howManyAdj == totAdj)]
           adjN <- totAdj - 1  # We need to exclude the focal cell
-          nb <- nbMatrices[[paste0("NB_", totAdj)]]
-          # A neighborhood matrix identifies the cells around each cell that are considered adjacent. 
-          # The matrix should have one, and only one, cell with value 0 (the focal cell); 
-          # at least one cell with value 1 (the adjacent cell(s)); All other cells are not considered 
-          # adjacent and ignored.
-          nb[nb == 0] <- -1
-          nb[ceiling(ncol(nb)/2), ceiling(nrow(nb)/2)] <- 0
-          ## MIGRATION REVIEW: raster::adjacent(..., id = TRUE) -> terra::adjacent(pairs = TRUE),
-          ## which returns "from"/"to" (no "id"); group by "from" (each focal cell). Verify terra's
-          ## matrix-`directions` + pairs behaviour on real data (untested here).
-          Adj <- as.data.table(terra::adjacent(x = rasterToMatch, cells = pix,
-                                  directions = nb, pairs = TRUE,
-                                  include = FALSE))
+          ## cells within a circle of radius totAdj pixels around each pix (see circleNeighbours())
+          Adj <- circleNeighbours(rasterToMatch, cells = pix, nPix = totAdj)
           ## Now we sample the number of adjacents needed from the whole table, by focal cell (each
           ## pix that needs those adjacents). If adjN exceeds available neighbours, fall back to
           ## sampling with replacement to keep execution stable.

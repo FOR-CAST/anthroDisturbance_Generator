@@ -21,15 +21,15 @@ defineModule(sim, list(
            email = "achubaty@for-cast.ca")
   ),
   childModules = character(0),
-  version = list(anthroDisturbance_Generator = "1.1.0"),
+  version = list(anthroDisturbance_Generator = "1.2.1"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.md", "anthroDisturbance_Generator.Rmd"), ## same file
   reqdPkgs = list("crayon", "data.table", "digest", "doParallel", "foreach",
-                  "geodata", "ggplot2", "googledrive", "msm", "parallelly", "qs2",
-                  "reproducible", "roads", "sf", "SpaDES.core", "stringi", "terra",
-                  "tictoc", "tidyterra", "truncnorm", "viridisLite", "zip"),
+                  "geodata", "ggplot2", "googledrive", "msm", "parallelly",
+                  "reproducible", "roads", "sf", "SpaDES.core", "SpaDES.tools", "spaths", "terra",
+                  "tictoc", "tidyterra", "truncnorm", "viridisLite"),
   parameters = rbind(
     defineParameter(".plots", "character", "screen", NA, NA,
                     "Used by Plots function, which can be optionally used here"),
@@ -43,6 +43,10 @@ defineModule(sim, list(
                     "This describes the simulation time interval between save events."),
     defineParameter(".seed", "list", list(), NA, NA,
                     "Named list of seeds to use for each event (names)."),
+    defineParameter(".baseSeed", "numeric", NA, NA, NA,
+                    paste0("If not NA, the random number generator is re-seeded at the start of every event ",
+                           "with .baseSeed * 1000 + the current simulation year. This makes a run exactly ",
+                           "reproducible, independently of caching or of what was computed earlier.")),
     defineParameter(".useCache", "logical", FALSE, NA, NA,
                     "Should caching of events or module be used?"),
     defineParameter("runInterval", "numeric", 10, NA, NA,
@@ -228,10 +232,13 @@ defineModule(sim, list(
                       "EC_borealdisturbance_polygonal_2008_2010_FINAL_ALBERS.shp"), NA, NA,
                     "Vector of target filenames within the older archive to be extracted."),
     defineParameter("urlOLD", "character",
-                    paste0("https://www.ec.gc.ca/data_donnees/STB-DGST/003/",
+                    paste0("https://zenodo.org/records/23659898/files/",
                            "Boreal-ecosystem-anthropogenic-disturbance-vector-data-",
                            "2008-2010.zip"), NA, NA,
-                    "URL to download the older dataset archive.")
+                    paste0("URL to download the older dataset archive (Zenodo copy of the dataset of ",
+                           "Environment and Climate Change Canada, Open Government Licence - Canada; ",
+                           "original: https://open.canada.ca/data/en/dataset/",
+                           "afd0ce47-17c3-445c-b823-2f86409da2e0)."))
   ),
   inputObjects = bindrows(
     #expectsInput("objectName", "objectClass", "input object description", sourceURL, ...),
@@ -245,7 +252,7 @@ defineModule(sim, list(
                                "values being the ones that need to be filled ",
                                "with new developments first, or prepared potential layers",
                                " (i.e., potentialCutblocks)."),
-                 sourceURL = "https://drive.google.com/file/d/1v7MpENdhspkWxHPZMlmx9UPCGFYGbbYm/view?usp=sharing"),
+                 sourceURL = "https://zenodo.org/records/20628704/files/disturbanceList.zip"),
     
     expectsInput(objectName = "disturbanceParameters", objectClass = "data.table",
                  desc = paste0("Table with the following columns: ",
@@ -437,6 +444,8 @@ defineModule(sim, list(
 #   - type `init` is required for initialization
 
 doEvent.anthroDisturbance_Generator = function(sim, eventTime, eventType) {
+  # Reproducible randomness: seed from the base seed and the simulation year (see parameter .baseSeed)
+  if (!is.na(P(sim)$.baseSeed)) set.seed(as.integer(P(sim)$.baseSeed * 1000 + time(sim)))
   switch(
     eventType,
     init = {
@@ -594,7 +603,7 @@ doEvent.anthroDisturbance_Generator = function(sim, eventTime, eventType) {
                                      currentTime = "IC",
                                      overwrite = TRUE,
                                      runName = P(sim)$.runName)
-        sim <- SpaDES.core::registerOutputs(.savedIC, sim)
+        if (length(.savedIC)) sim <- SpaDES.core::registerOutputs(.savedIC, sim)
         
         initialBufferedAnthropogenicDisturbance500m <- createBufferedDisturbances(disturbanceList = sim$disturbanceList,
                                                                                   bufferSize = 500,
@@ -783,7 +792,7 @@ doEvent.anthroDisturbance_Generator = function(sim, eventTime, eventType) {
           .saved <- saveDisturbances(disturbanceList = sim$disturbanceList,
                                      currentTime = time(sim), overwrite = TRUE,
                                      runName = P(sim)$.runName)
-          sim <- SpaDES.core::registerOutputs(.saved, sim)
+          if (length(.saved)) sim <- SpaDES.core::registerOutputs(.saved, sim)
         }
       }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$runInterval, "anthroDisturbance_Generator", "updatingDisturbanceList")
