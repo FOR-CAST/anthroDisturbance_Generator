@@ -92,7 +92,6 @@ area_m2 <- function(v) {
 # --- tests -----------------------------------------------------------------
 
 test_that("Vector mode: returns dissolved SpatVector and excludes potential layers", {
-  skip_if_not_installed("fasterize") # used inside the function even in vector workflow
   r <- make_template(n = 100, res_m = 10)
   sa <- make_study_area(r)
   
@@ -132,8 +131,6 @@ test_that("Vector mode: returns dissolved SpatVector and excludes potential laye
 })
 
 test_that("Vector mode: empty raster inputs are ignored (NULL dropped) and union still works", {
-  skip_if_not_installed("fasterize")
-  
   r <- make_template(n = 60, res_m = 10)
   sa <- make_study_area(r)
   dl <- make_disturbance_list(r)
@@ -156,8 +153,6 @@ test_that("Vector mode: empty raster inputs are ignored (NULL dropped) and union
 })
 
 test_that("Raster mode (SpatRaster template): 1/0/NA semantics and class parity", {
-  skip_if_not_installed("fasterize")
-  
   r <- make_template(n = 80, res_m = 10)
   sa <- make_study_area(r)
   dl <- make_disturbance_list(r)
@@ -237,8 +232,6 @@ test_that("Raster mode: a cell is 1 exactly when its centre is inside a buffered
 })
 
 test_that("Raster mode: potential layers do not change the result", {
-  skip_if_not_installed("fasterize")
-  
   r <- make_template(n = 60, res_m = 10)
   sa <- make_study_area(r)
   
@@ -272,8 +265,6 @@ test_that("Raster mode: potential layers do not change the result", {
 })
 
 test_that("Inputs: raster disturbance layers must be 1-coded to be kept", {
-  skip_if_not_installed("fasterize")
-  
   r <- make_template(n = 40, res_m = 10)
   sa <- make_study_area(r)
   
