@@ -137,8 +137,6 @@ testthat::test_that("Primary sim runs one year and updates outputs (vector mode)
   testthat::skip_if_not_installed("terra")
   testthat::skip_if_not_installed("data.table")
   testthat::skip_if_not_installed("sf")
-  testthat::skip_if_not_installed("fasterize")
-  testthat::skip_if_not_installed("raster")
   testthat::skip_if_not_installed("tictoc")
   
   # Attach only what the module calls unqualified

@@ -81,7 +81,7 @@ sum_ones <- function(ras) sum(values(ras) == 1, na.rm = TRUE)
 
 # Ensure optional dependencies available for scenarios that call the full generator
 skip_if_missing_generate_deps <- function() {
-  req_pkgs <- c("SpaDES.tools", "raster", "tictoc", "reproducible")
+  req_pkgs <- c("SpaDES.tools", "tictoc", "reproducible")
   for (pkg in req_pkgs) testthat::skip_if_not_installed(pkg)
 }
 # ---------- disturbanceParameters helpers (only polygon “Generating”) ----------
@@ -298,7 +298,7 @@ testthat::test_that("Forestry Generating avoids burned cells", {
       v <- terra::vect(matrix(c(x0,y0, x0+size,y0, x0+size,y0+size, x0,y0+size, x0,y0),
                               ncol = 2, byrow = TRUE),
                        type = "polygons",
-                       crs  = terra::crs(pot))
+                       crs  = terra::crs(r))
       v$Potential <- pot
       v$Class <- "potentialCutblocks"
       v$ORIGIN <- 1900L

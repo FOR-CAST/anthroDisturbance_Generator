@@ -25,6 +25,7 @@ test_that("single SpatVector sector is saved as shapefile", {
 })
 
 test_that("single RasterLayer sector is saved as tiff", {
+  testthat::skip_if_not_installed("raster")
   r <- raster::raster(nrows = 5, ncols = 5)
   raster::values(r) <- 1
   disturbances <- list(sectorB = r)
