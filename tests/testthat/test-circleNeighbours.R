@@ -1,10 +1,10 @@
 # test-circleNeighbours.R
-## circleNeighbours() picks the cells a new disturbance can grow into: those within a circle of nPix
-## pixels around its first pixel. Expected cells are worked out from row/column offsets alone.
+# circleNeighbours() picks the cells a new disturbance can grow into: those within a circle of nPix
+# pixels around its first pixel. Expected cells are worked out from row/column offsets alone.
 
 expectedNeighbours <- function(r, focal, nPix) {
   rc <- terra::rowColFromCell(r, focal)
-  all_rc <- expand.grid(row = seq_len(nrow(r)), col = seq_len(ncol(r)))
+  all_rc <- expand.grid(row = seq_len(terra::nrow(r)), col = seq_len(terra::ncol(r)))
   d2 <- (all_rc$row - rc[1, 1])^2 + (all_rc$col - rc[1, 2])^2
   keep <- d2 > 0 & d2 <= nPix^2
   sort(terra::cellFromRowCol(r, all_rc$row[keep], all_rc$col[keep]))
@@ -24,7 +24,7 @@ testthat::test_that("neighbours are the cells within the circle, not the whole s
     testthat::expect_true(all(out$from == focal))
     testthat::expect_equal(sort(out$to), expectedNeighbours(r, focal, nPix), info = paste("nPix", nPix))
   }
-  ## nPix = 1 is the 4 rook neighbours; nPix = 2 adds the diagonals and the cells 2 away
+  # nPix = 1 is the 4 rook neighbours; nPix = 2 adds the diagonals and the cells 2 away
   testthat::expect_equal(nrow(circleNeighbours(r, focal, 1)), 4L)
   testthat::expect_equal(nrow(circleNeighbours(r, focal, 2)), 12L)
 })
@@ -41,8 +41,8 @@ testthat::test_that("neighbours stop at the raster edge and corner, without wrap
 })
 
 testthat::test_that("rows are in raster::adjacent()'s order: by focal cell, then column by column", {
-  ## generateDisturbances() samples rows of this table, so the order decides which cells a given seed
-  ## picks. Expected order: focal cells as given; within each, the circle's cells column by column.
+  # generateDisturbances() samples rows of this table, so the order decides which cells a given seed
+  # picks. Expected order: focal cells as given; within each, the circle's cells column by column.
   r <- make_rtm()
   cells <- terra::cellFromRowCol(r, c(15, 1, 30), c(20, 1, 40)) # interior, then two corners
   nPix <- 3
@@ -52,7 +52,7 @@ testthat::test_that("rows are in raster::adjacent()'s order: by focal cell, then
     off <- off[(off$dr^2 + off$dc^2) > 0 & (off$dr^2 + off$dc^2) <= nPix^2, ]
     rr <- rc[1, 1] + off$dr
     cc <- rc[1, 2] + off$dc
-    keep <- rr >= 1 & rr <= nrow(r) & cc >= 1 & cc <= ncol(r)
+    keep <- rr >= 1 & rr <= terra::nrow(r) & cc >= 1 & cc <= terra::ncol(r)
     data.frame(from = f, to = terra::cellFromRowCol(r, rr[keep], cc[keep]))
   }))
   out <- circleNeighbours(r, cells = cells, nPix = nPix)
@@ -67,6 +67,6 @@ testthat::test_that("several focal cells: each gets its own neighbours, and neve
   testthat::expect_setequal(unique(out$from), cells)
   testthat::expect_false(any(out$from == out$to))
   for (f in cells) {
-    testthat::expect_equal(sort(out[from == f, to]), expectedNeighbours(r, f, 2))
+    testthat::expect_equal(sort(out$to[out$from == f]), expectedNeighbours(r, f, 2))
   }
 })

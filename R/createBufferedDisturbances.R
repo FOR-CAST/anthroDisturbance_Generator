@@ -5,9 +5,9 @@ createBufferedDisturbances <- function(disturbanceList,
                                        currentTime,
                                        convertToRaster){
   
-  ## canonical SpatRaster view (terra-first; no RasterLayer/fasterize template needed)
-  targetSR <- terra::rast(rasterToMatch)
-
+  # SpatRaster view of the template (terra::rast() also converts a RasterLayer)
+  targetSR <- terra::rast(rasterToMatch)                 ### FIX: canonical SpatRaster view
+  
   studyAreaTotalArea <- terra::expanse(studyArea, transform = FALSE, unit = "km")
   cell_km2 <- prod(terra::res(targetSR)) / 1e6           ### FIX: real cell area
   
@@ -57,7 +57,7 @@ createBufferedDisturbances <- function(disturbanceList,
     message(paste0("This represents ",
                    round(100 * (totalAreaKm2 / studyAreaTotalArea), 4), "% of total area."))
     
-    ## rasterize the buffered polygons onto the template
+    # Rasterize against the template (cells whose centre is in the buffer get 1, others NA)
     bLayRas <- terra::rasterize(bLay, targetSR)
     names(bLayRas) <- INDEX
     
@@ -84,7 +84,7 @@ createBufferedDisturbances <- function(disturbanceList,
     
     # Align every layer to targetSR (SpatRaster view) and force 0/1
     allBuffered <- lapply(allBuffered, function(r) {
-      ## terra::rast() of a SpatRaster would return an empty template, without the values
+      # terra::rast() of a SpatRaster would return an empty template, without the values
       if (!inherits(r, "SpatRaster")) r <- terra::rast(r)  # RasterLayer -> SpatRaster
       if (!terra::compareGeom(r, targetSR, stopOnError = FALSE)) {
         r <- terra::project(r, targetSR)
@@ -115,7 +115,7 @@ createBufferedDisturbances <- function(disturbanceList,
                    "% of the total area (", round(totalKm2, 3), " km2)"))
     
     return(outSR)
-
+    
   } else {
     # (vector branch unchanged)
     if (any(vapply(allBuffered, is.null, FALSE))) {

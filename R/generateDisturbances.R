@@ -16,6 +16,7 @@ generateDisturbances <- function(disturbanceParameters,
 
   # Extracting layers from previous ones
   # Total study area
+  if (!inherits(rasterToMatch, "SpatRaster")) rasterToMatch <- terra::rast(rasterToMatch)
   growthStepEnlargingLines <- if (is.null(growthStepEnlargingLines) || is.na(growthStepEnlargingLines)) 1 else growthStepEnlargingLines
 
   safeMergeSpatVectors <- function(items,
@@ -36,7 +37,7 @@ generateDisturbances <- function(disturbanceParameters,
     }
     baseWidth <- bufferWidth
     if (is.null(baseWidth) || is.na(baseWidth) || baseWidth <= 0) {
-      baseWidth <- tryCatch(res(rasterToMatch)[1], error = function(...) NA_real_)
+      baseWidth <- tryCatch(terra::res(rasterToMatch)[1], error = function(...) NA_real_)
     }
     if (is.na(baseWidth) || baseWidth <= 0) baseWidth <- 15
     convertToPolygon <- function(vec) {
@@ -170,7 +171,7 @@ generateDisturbances <- function(disturbanceParameters,
         paste(class(x), collapse = ":")
       }, character(1)), collapse=" | "))
     }
-    mergeWidth <- tryCatch(res(rasterToMatch)[1], error = function(...) NA_real_)
+    mergeWidth <- tryCatch(terra::res(rasterToMatch)[1], error = function(...) NA_real_)
     allLays <- safeMergeSpatVectors(linesAndPolys,
                                     context = "current disturbance layers",
                                     bufferWidth = mergeWidth,
@@ -199,7 +200,7 @@ generateDisturbances <- function(disturbanceParameters,
             })
             names(curDistVcsAll) <- NULL
             curDistVcsAll <- Filter(Negate(is.null), curDistVcsAll)
-            mergeWidth <- tryCatch(res(rasterToMatch)[1], error = function(...) NA_real_)
+            mergeWidth <- tryCatch(terra::res(rasterToMatch)[1], error = function(...) NA_real_)
             allLays <- safeMergeSpatVectors(curDistVcsAll,
                                             context = "existing disturbance vectors",
                                             bufferWidth = mergeWidth,
@@ -248,7 +249,6 @@ generateDisturbances <- function(disturbanceParameters,
           polySF$Polys <- rep(1, nrow(polySF)) # rep(): a scalar cannot be assigned to a 0-row sf
           polysField <- "Polys"
           message("Rasterizing disturbances...")
-          rasterToMatch <- rasterToMatch
           polyVec <- terra::vect(polySF)
           allLaysRas <- terra::rasterize(polyVec,
                                          terra::rast(rasterToMatch), 
@@ -749,7 +749,7 @@ generateDisturbances <- function(disturbanceParameters,
       } else if (isTRUE(getOption("run_scenario.debug", FALSE))) {
         message("[generateDisturbances] allLaysRas is NULL; skipping mask of existing disturbances")
       }
-      ## mat = FALSE: a matrix of values would name the column "vals.<layer name>"
+      # mat = FALSE: a matrix of values would name the column "vals.<layer name>"
       potentialDT <- na.omit(data.table(pixelID = 1:ncell(potLayF),
                                 vals = terra::values(potLayF, mat = FALSE)))
       # Third, subset the best pixels
@@ -826,11 +826,11 @@ generateDisturbances <- function(disturbanceParameters,
         allPixAdj <- sapply(whichAdj, function(totAdj){
           pix <- pixNeedAdj[which(howManyAdj == totAdj)]
           adjN <- totAdj - 1  # We need to exclude the focal cell
-          ## cells within a circle of radius totAdj pixels around each pix (see circleNeighbours())
+          # Cells within a circle of radius totAdj pixels around each pix (see circleNeighbours())
           Adj <- circleNeighbours(rasterToMatch, cells = pix, nPix = totAdj)
-          ## Now we sample the number of adjacents needed from the whole table, by focal cell (each
-          ## pix that needs those adjacents). If adjN exceeds available neighbours, fall back to
-          ## sampling with replacement to keep execution stable.
+          # Now we sample the number of adjacents needed from the whole table, by focal cell (each
+          # pix that needs those adjacents). If adjN exceeds available neighbours, fall back to sampling
+          # with replacement to keep execution stable.
           chosen <- Adj[, {
             n_to_sample <- min(.N, adjN)
             .SD[sample(.N, n_to_sample, replace = n_to_sample > .N)]
@@ -1021,7 +1021,7 @@ generateDisturbances <- function(disturbanceParameters,
             # 4. Update the endLayer with the new connection
             if (!is(connectedOne, "SpatVector"))
               connectedOne <- terra::vect(connectedOne)
-        connectWidth <- tryCatch(res(rasterToMatch)[1], error = function(...) NA_real_)
+        connectWidth <- tryCatch(terra::res(rasterToMatch)[1], error = function(...) NA_real_)
         if (exists("connected", inherits = FALSE) && !is.null(connected)){
           connected <- safeMergeSpatVectors(list(connected, connectedOne),
                                             context = "connecting block merge",
@@ -1053,7 +1053,7 @@ generateDisturbances <- function(disturbanceParameters,
             # 4. Update the endLayer with the new connection
             if (!is(connectedOne, "SpatVector"))
               connectedOne <- terra::vect(connectedOne)
-            connectWidth <- tryCatch(res(rasterToMatch)[1], error = function(...) NA_real_)
+            connectWidth <- tryCatch(terra::res(rasterToMatch)[1], error = function(...) NA_real_)
             if (exists("connected", inherits = FALSE) && !is.null(connected)){
               connected <- safeMergeSpatVectors(list(connected, connectedOne),
                                                 context = "connecting block merge",
@@ -1099,7 +1099,7 @@ generateDisturbances <- function(disturbanceParameters,
     }, layerList)
     if (!length(layerList)) return(layerList)
     if (length(layerList) == 1L) return(layerList)
-    mergeWidth <- tryCatch(res(rasterToMatch)[1], error = function(...) NA_real_)
+    mergeWidth <- tryCatch(terra::res(rasterToMatch)[1], error = function(...) NA_real_)
     mergedLayer <- safeMergeSpatVectors(layerList,
                                         context = "connecting layers",
                                         bufferWidth = mergeWidth)
@@ -1160,7 +1160,7 @@ generateDisturbances <- function(disturbanceParameters,
   #       currDistSF$disturbance <- 1
   #       fld <- "disturbance"
   #       currentDisturbanceLay <- suppressWarnings(fasterize::fasterize(sf = st_collection_extract(currDistSF, "POLYGON"),
-  #                                                     raster = rasterToMatch, field = fld))
+  #                                                     raster = rasterToMatchR, field = fld))
   #       # NOTE: 
   #       # Seems that the fasterize is not picking up roads from currDistSF, which makes sense considering they are 
   #       # much smaller than the resolution... However, this layer is just so we exclude the pixels that 
@@ -1313,7 +1313,7 @@ generateDisturbances <- function(disturbanceParameters,
       return(buffVect)
     })
     curDistVcsAll <- Filter(Negate(is.null), curDistVcsAll)
-    mergeWidth <- tryCatch(res(rasterToMatch)[1], error = function(...) NA_real_)
+    mergeWidth <- tryCatch(terra::res(rasterToMatch)[1], error = function(...) NA_real_)
     newDisturbanceLayers <- safeMergeSpatVectors(curDistVcsAll,
                                                  context = "buffered disturbance vectors",
                                                  bufferWidth = mergeWidth,

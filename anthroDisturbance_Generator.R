@@ -21,7 +21,7 @@ defineModule(sim, list(
            email = "achubaty@for-cast.ca")
   ),
   childModules = character(0),
-  version = list(anthroDisturbance_Generator = "1.2.1"),
+  version = list(anthroDisturbance_Generator = "1.3.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
