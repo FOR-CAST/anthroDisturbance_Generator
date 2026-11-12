@@ -4,16 +4,19 @@
 #' duplication can add far more area than the target of the time step. Without trimming,
 #' the overshoot is inherited by the next time step (the copies stay in their cluster, which
 #' then is even larger), and it compounds. This function keeps a random subset of the new
-#' lines, so that the area is as close as possible to the target (at most one line away).
+#' lines, so that the area is at most the target, and then fills the remaining gap with the next line
+#' shortened from its start, so that the area ends up on the target.
 #'
 #' @param lines SpatVector of lines (the lines generated in the time step).
 #' @param target Numeric. Area (m2) that the new lines should have.
 #' @param measure Function taking a SpatVector of lines and returning their area (m2),
 #'   computed in the same way as the area that was used to reach the target.
 #'
+#' @param tol Relative tolerance: the shortened last line is only added if the gap to the target is larger than tol * target.
+#'
 #' @return A list with the trimmed lines (original order kept) and their area (m2).
 #' @noRd
-trimLinesToTarget <- function(lines, target, measure) {
+trimLinesToTarget <- function(lines, target, measure, tol = 0.002) {
   n <- NROW(lines)
   areaAll <- measure(lines)
   if (n < 2L || !is.finite(areaAll) || !is.finite(target) || areaAll <= target) {
@@ -30,9 +33,30 @@ trimLinesToTarget <- function(lines, target, measure) {
       aMid <- areaOf(mid)
       if (aMid <= target) { lo <- mid; aLo <- aMid } else hi <- mid
     }
-    # one more line if that gets closer to the target than stopping before it
-    aHi <- areaOf(hi)
-    if (abs(aHi - target) < abs(aLo - target)) { lo <- hi; aLo <- aHi }
   }
-  list(lines = lines[sort(ord[seq_len(lo)]), ], area = aLo)
+  keep <- lines[sort(ord[seq_len(lo)]), ]
+  # Whole lines can only reach the target to within one line. If the next line would overshoot,
+  # add it shortened (from its start) so that the area ends up on the target.
+  if (lo < n && aLo < target && (target - aLo) > tol * target) {
+    nxt <- lines[ord[lo + 1L], ]
+    xy <- terra::crds(terra::as.points(nxt))[1L, , drop = FALSE]
+    startPt <- terra::vect(xy, type = "points", crs = terra::crs(lines))
+    maxR <- as.numeric(terra::perim(nxt))
+    tryR <- function(r) {
+      part <- tryCatch(terra::crop(nxt, terra::buffer(startPt, width = r)), error = function(e) NULL)
+      if (is.null(part) || NROW(part) == 0L) return(list(part = NULL, area = aLo))
+      cand <- rbind(keep, part)
+      list(part = part, area = measure(cand))
+    }
+    rLo <- 0; rHi <- maxR; best <- list(part = NULL, area = aLo)
+    for (i in seq_len(14L)) {
+      rMid <- (rLo + rHi) / 2
+      w <- tryR(rMid)
+      if (is.null(w$part)) { rLo <- rMid; next }
+      if (abs(w$area - target) < abs(best$area - target)) best <- w
+      if (w$area > target) rHi <- rMid else rLo <- rMid
+    }
+    if (!is.null(best$part)) return(list(lines = rbind(keep, best$part), area = best$area))
+  }
+  list(lines = keep, area = aLo)
 }

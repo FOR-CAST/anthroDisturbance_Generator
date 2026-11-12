@@ -7,20 +7,24 @@ test_that("trimLinesToTarget keeps the lines unchanged when the target is not ex
   expect_equal(out$area, 500)
 })
 
-test_that("trimLinesToTarget trims to within one line of the target", {
+test_that("trimLinesToTarget lands on the target: whole lines plus the next one, shortened", {
   skip_on_cran()
-  # 40 lines of 100 m each: a target of 1,230 m means 12 lines (1,200 m, closer than 13 lines = 1,300 m)
+  # 40 lines of 100 m each: a target of 1,230 m means 12 whole lines (1,200 m) plus 30 m of a 13th line
   lns <- terra::vect(lapply(1:40, function(i) rbind(c(0, i * 10), c(100, i * 10))), type = "lines", crs = "EPSG:3005")
   len <- function(v) sum(terra::perim(v))
   set.seed(1)
   out <- trimLinesToTarget(lns, target = 1230, measure = len)
-  expect_equal(NROW(out$lines), 12L)
-  expect_equal(out$area, 1200)
+  expect_equal(NROW(out$lines), 13L)
+  expect_lte(abs(out$area - 1230), 0.005 * 1230)
   expect_equal(len(out$lines), out$area)
-  # a different seed keeps different lines, but the same number
+  # a different seed keeps different lines, but ends on the target as well
   set.seed(2)
   out2 <- trimLinesToTarget(lns, target = 1230, measure = len)
-  expect_equal(NROW(out2$lines), 12L)
+  expect_lte(abs(out2$area - 1230), 0.005 * 1230)
+  # a target that is a whole number of lines needs no shortened line
+  out3 <- trimLinesToTarget(lns, target = 1200, measure = len)
+  expect_equal(NROW(out3$lines), 12L)
+  expect_equal(out3$area, 1200)
 })
 
 test_that("trimLinesToTarget keeps at least one line", {

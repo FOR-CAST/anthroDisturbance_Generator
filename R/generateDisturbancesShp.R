@@ -1031,6 +1031,16 @@ generateDisturbancesShp <- function(disturbanceParameters,
           }
           
           # 1. Make the iteration, and while the area is not achieved, continue 
+          # Area (m2) of a set of seismic lines, measured as the target is measured (3 m footprint, or the
+          # 500 m buffered union when rates relate to the buffered area). Overlapping lines count once.
+          seismicArea <- function(v) {
+            b <- terra::buffer(v, width = 3)
+            if (isTRUE(useBufferedArea)) {
+              b <- clipToStudyArea(terra::buffer(b, width = 500))
+              if (NROW(b) > 1L) b <- terra::aggregate(b)
+            }
+            sumExpanse(b, unit = "m", transform = FALSE)
+          }
           areaChosenTotal <- 0
           IT <- 1
           newDisturbs <- NULL
@@ -1528,6 +1538,15 @@ generateDisturbancesShp <- function(disturbanceParameters,
             } else {
               newDisturbs <- if (is.null(newDisturbs)) newDist else rbind(newDisturbs, newDist)
             }
+            # The running sum above adds the area of each iteration separately, so it counts twice where
+            # the new lines of different iterations (or copies of the same cluster) overlap, and it stops
+            # too early. Once it says the target is reached, measure the union of all new lines; if that
+            # is still below the target, the loop continues.
+            if (identical(ORIGIN, "seismicLines") && isTRUE(useClusterMethod) &&
+                areaChosenTotal >= expectedNewDisturbAreaSqM &&
+                inherits(newDisturbs, "SpatVector") && NROW(newDisturbs) > 0L) {
+              areaChosenTotal <- seismicArea(newDisturbs)
+            }
             IT <- IT + 1
           }
 
@@ -1538,15 +1557,6 @@ generateDisturbancesShp <- function(disturbanceParameters,
               inherits(newDisturbs, "SpatVector") && NROW(newDisturbs) > 1L &&
               all(terra::geomtype(newDisturbs) == "lines") &&
               areaChosenTotal > expectedNewDisturbAreaSqM) {
-            # same measure that was used to reach the target above
-            seismicArea <- function(v) {
-              b <- terra::buffer(v, width = 3)
-              if (isTRUE(useBufferedArea)) {
-                b <- clipToStudyArea(terra::buffer(b, width = 500))
-                if (NROW(b) > 1L) b <- terra::aggregate(b)
-              }
-              sumExpanse(b, unit = "m", transform = FALSE)
-            }
             nBefore <- NROW(newDisturbs)
             trimmed <- trimLinesToTarget(newDisturbs, expectedNewDisturbAreaSqM, seismicArea)
             newDisturbs <- trimmed$lines
