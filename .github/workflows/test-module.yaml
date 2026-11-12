@@ -67,7 +67,7 @@ jobs:
             any::SpaDES.core
             any::SpaDES.tools
             any::spaths
-            github::PredictiveEcology/reproducible@5276f2c8e6dce1ca133f6215500b262bda535baa
+            github::PredictiveEcology/reproducible@b56c3003823a3bf5bd129dc1ebcdccb64c339589
 
       - name: Run tests
         run: Rscript tests/run-tests.R
