@@ -14,9 +14,11 @@
 #'
 #' @param tol Relative tolerance: the shortened last line is only added if the gap to the target is larger than tol * target.
 #'
+#' @param maxCandidates How many of the remaining lines are tried, shortened, to fill the gap.
+#'
 #' @return A list with the trimmed lines (original order kept) and their area (m2).
 #' @noRd
-trimLinesToTarget <- function(lines, target, measure, tol = 0.002) {
+trimLinesToTarget <- function(lines, target, measure, tol = 0.002, maxCandidates = 6L) {
   n <- NROW(lines)
   areaAll <- measure(lines)
   if (n < 2L || !is.finite(areaAll) || !is.finite(target) || areaAll <= target) {
@@ -35,28 +37,34 @@ trimLinesToTarget <- function(lines, target, measure, tol = 0.002) {
     }
   }
   keep <- lines[sort(ord[seq_len(lo)]), ]
-  # Whole lines can only reach the target to within one line. If the next line would overshoot,
-  # add it shortened (from its start) so that the area ends up on the target.
+  # Whole lines can only reach the target to within one line. For the gap that is left, try the next
+  # few lines (from either end) shortened, and keep the one that ends closest to the target. (A very
+  # short piece still adds a whole buffer, so a piece that starts near the lines already kept fits
+  # best; this is why several candidates are tried.)
+  best <- list(part = NULL, area = aLo)
   if (lo < n && aLo < target && (target - aLo) > tol * target) {
-    nxt <- lines[ord[lo + 1L], ]
-    xy <- terra::crds(terra::as.points(nxt))[1L, , drop = FALSE]
-    startPt <- terra::vect(xy, type = "points", crs = terra::crs(lines))
-    maxR <- as.numeric(terra::perim(nxt))
-    tryR <- function(r) {
-      part <- tryCatch(terra::crop(nxt, terra::buffer(startPt, width = r)), error = function(e) NULL)
-      if (is.null(part) || NROW(part) == 0L) return(list(part = NULL, area = aLo))
-      cand <- rbind(keep, part)
-      list(part = part, area = measure(cand))
+    cands <- ord[(lo + 1L):min(n, lo + maxCandidates)]
+    for (ci in cands) {
+      nxt <- lines[ci, ]
+      xy <- terra::crds(terra::as.points(nxt))
+      maxR <- as.numeric(terra::perim(nxt))
+      for (endPt in list(xy[1L, , drop = FALSE], xy[nrow(xy), , drop = FALSE])) {
+        pt <- terra::vect(endPt, type = "points", crs = terra::crs(lines))
+        rLo <- 0; rHi <- maxR
+        for (i in seq_len(14L)) {
+          rMid <- (rLo + rHi) / 2
+          part <- tryCatch(terra::crop(nxt, terra::buffer(pt, width = rMid)), error = function(e) NULL)
+          if (is.null(part) || NROW(part) == 0L) { rLo <- rMid; next }
+          a <- measure(rbind(keep, part))
+          if (abs(a - target) < abs(best$area - target)) best <- list(part = part, area = a)
+          if (a > target) rHi <- rMid else rLo <- rMid
+          if (abs(best$area - target) <= tol * target) break
+        }
+        if (abs(best$area - target) <= tol * target) break
+      }
+      if (abs(best$area - target) <= tol * target) break
     }
-    rLo <- 0; rHi <- maxR; best <- list(part = NULL, area = aLo)
-    for (i in seq_len(14L)) {
-      rMid <- (rLo + rHi) / 2
-      w <- tryR(rMid)
-      if (is.null(w$part)) { rLo <- rMid; next }
-      if (abs(w$area - target) < abs(best$area - target)) best <- w
-      if (w$area > target) rHi <- rMid else rLo <- rMid
-    }
-    if (!is.null(best$part)) return(list(lines = rbind(keep, best$part), area = best$area))
   }
+  if (!is.null(best$part)) return(list(lines = rbind(keep, best$part), area = best$area))
   list(lines = keep, area = aLo)
 }
