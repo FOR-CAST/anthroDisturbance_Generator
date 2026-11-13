@@ -2139,11 +2139,11 @@ generateDisturbancesShp <- function(disturbanceParameters,
     browser()
   }
   # Cleanup the NULLS!
-  curDistRas <- cleanupList(curDistRas, 
-                            outter = TRUE, 
-                            inner = TRUE, 
-                            cleanEmpty = TRUE, 
-                            nullEmpty = FALSE)
+  curDistRas <- anthroDisturbanceUtils::cleanupList(curDistRas, 
+                                                    outer = TRUE, 
+                                                    inner = TRUE, 
+                                                    cleanEmpty = TRUE, 
+                                                    nullEmpty = FALSE)
   
   ########################### FINAL LAYERS ###########################
   
@@ -2208,11 +2208,11 @@ generateDisturbancesShp <- function(disturbanceParameters,
     seismicLinesFirstYear <- NULL
   }
   
-  individualLayers <- cleanupList(individualLayers, 
-                                  outter = TRUE, 
-                                  inner = TRUE, 
-                                  cleanEmpty = TRUE, 
-                                  nullEmpty = FALSE)
+  individualLayers <- anthroDisturbanceUtils::cleanupList(individualLayers, 
+                                                          outer = TRUE, 
+                                                          inner = TRUE, 
+                                                          cleanEmpty = TRUE, 
+                                                          nullEmpty = FALSE)
   
   return(list(individualLayers = individualLayers, 
               currentDisturbanceLayer = curDistRas,

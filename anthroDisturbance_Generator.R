@@ -26,7 +26,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.md", "anthroDisturbance_Generator.Rmd"), ## same file
-  reqdPkgs = list("crayon", "data.table", "digest", "doParallel", "foreach",
+  reqdPkgs = list("FOR-CAST/anthroDisturbanceUtils", "crayon", "data.table", "digest", "doParallel", "foreach",
                   "geodata", "ggplot2", "googledrive", "msm", "parallelly",
                   "reproducible", "roads", "sf", "SpaDES.core", "SpaDES.tools", "spaths", "terra",
                   "tictoc", "tidyterra", "truncnorm", "viridisLite"),
@@ -802,7 +802,7 @@ doEvent.anthroDisturbance_Generator = function(sim, eventTime, eventType) {
       ## disturbance-map diagnostic: combine the current anthropogenic-disturbance layers into a
       ## presence raster and plot it via tidyterra/ggplot2 through SpaDES.core::Plots() (so the PNG is
       ## saved to figurePath() + registered as an output). Skips cleanly if nothing generated yet.
-      distRas <- disturbancePresenceRaster(sim$currentDisturbanceLayer, sim$rasterToMatch)
+      distRas <- anthroDisturbanceUtils::disturbancePresenceRaster(sim$currentDisturbanceLayer, sim$rasterToMatch)
       if (!is.null(distRas)) {
         Plots(
           data = distRas,
@@ -846,8 +846,8 @@ doEvent.anthroDisturbance_Generator = function(sim, eventTime, eventType) {
   }
   
   if (!suppliedElsewhere(object = "disturbanceList", sim = sim)) {
-    sim$disturbanceList <- unwrapTerraList(terraList = extractURL("disturbanceList"), 
-                                           generalPath = dataPath(sim))
+    sim$disturbanceList <- anthroDisturbanceUtils::unwrapTerraList(terraList = extractURL("disturbanceList"), 
+                                                                   generalPath = dataPath(sim))
     
     target_crs <- tryCatch(terra::crs(sim$rasterToMatch), error = function(...) NA_character_)
     if (!is.na(target_crs) && nzchar(target_crs)) {
